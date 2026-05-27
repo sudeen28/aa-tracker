@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import CheckIn from "./CheckIn.jsx";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -714,7 +715,7 @@ function SeatMap({ config }) {
         <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", padding: "18px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
           <div>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.15em", marginBottom: 4 }}>SEAT ASSIGNMENT</div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: "#CC0000", letterSpacing: "0.1em" }}>Seat 14A</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: "#CC0000", letterSpacing: "0.1em" }}>Seat {chosenSeat}</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>Window · Economy · Row 14</div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -783,13 +784,14 @@ function SeatMap({ config }) {
                         return (
                           <div
                             key={col}
+                            onClick={() => handleSeatClick(row, col)}
                             onMouseEnter={() => setHoveredSeat(row + col)}
                             onMouseLeave={() => setHoveredSeat(null)}
                             style={{
                               width: 24, height: 20, borderRadius: "4px 4px 2px 2px",
                               background: getSeatColor(status, section.color),
                               border: getSeatBorder(status, section.color),
-                              flexShrink: 0, marginRight: 3, cursor: status === "occupied" ? "default" : "pointer",
+                              flexShrink: 0, marginRight: 3, cursor: status === "occupied" ? "not-allowed" : "pointer",
                               position: "relative", transition: "transform 0.1s",
                               transform: hoveredSeat === row + col && status !== "occupied" ? "scale(1.2)" : "scale(1)",
                               boxShadow: isSelected ? "0 0 0 3px rgba(204,0,0,0.3)" : "none",
@@ -823,6 +825,21 @@ function SeatMap({ config }) {
 
             </div>
           </div>
+
+          {/* Seat change bar */}
+          {seatChanged && (
+            <div style={{ marginTop: 14, padding: "12px 16px", background: seatSaved ? "#f0fdf4" : "#eff6ff", border: "1px solid " + (seatSaved ? "#bbf7d0" : "#bfdbfe"), borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+              <div style={{ fontSize: 13, color: seatSaved ? "#16a34a" : "#0047AB" }}>
+                {seatSaved ? "✅ Seat changed to " + chosenSeat + " successfully!" : "✈ New seat selected: " + chosenSeat + " — confirm to save"}
+              </div>
+              {!seatSaved && (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => { setChosenSeat(activeConfig.selected_seat || activeConfig.selectedSeat); setSeatChanged(false); }} style={{ padding: "6px 14px", background: "white", color: "#64748b", border: "1px solid #e2e8f4", borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                  <button onClick={() => { setSeatSaved(true); setSeatChanged(false); }} style={{ padding: "6px 16px", background: "linear-gradient(135deg,#0047AB,#003580)", color: "white", border: "none", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 3px 10px rgba(0,71,171,0.3)" }}>Confirm Seat {chosenSeat}</button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Hover tooltip */}
           {hoveredSeat && (
@@ -1968,9 +1985,158 @@ function ETicketReceipt({ booking }) {
 }
 
 // =========================================================
+// HOTELS & CAR RENTAL DATA
+// =========================================================
+const HOTELS_DATA = {
+  JFK: [
+    { name: "JW Marriott Essex House", stars: 5, distance: "12 miles from JFK", price: "$289/night", rating: 4.7, reviews: 2841, image: "🏨", amenities: ["Free WiFi", "Pool", "Spa", "Restaurant"], address: "160 Central Park South, New York" },
+    { name: "The New Yorker Hotel", stars: 4, distance: "11 miles from JFK", price: "$189/night", rating: 4.4, reviews: 5621, image: "🏩", amenities: ["Free WiFi", "Gym", "Bar", "24hr Desk"], address: "481 8th Ave, New York" },
+    { name: "Hilton JFK Airport", stars: 4, distance: "0.5 miles from JFK", price: "$159/night", rating: 4.2, reviews: 3102, image: "🏪", amenities: ["Free Shuttle", "Pool", "Restaurant", "WiFi"], address: "144-02 135th Ave, Jamaica, NY" },
+    { name: "TWA Hotel at JFK", stars: 4, distance: "On airport grounds", price: "$249/night", rating: 4.8, reviews: 1876, image: "✈️", amenities: ["Rooftop Pool", "6 Restaurants", "Retro Design", "WiFi"], address: "One Idlewild Drive, Jamaica, NY" },
+    { name: "Hyatt Regency JFK", stars: 4, distance: "1 mile from JFK", price: "$179/night", rating: 4.3, reviews: 2234, image: "🏨", amenities: ["Free Shuttle", "Gym", "Bar", "WiFi"], address: "9100 S Service Rd, Jamaica, NY" },
+  ],
+  LHR: [
+    { name: "Sofitel London Heathrow", stars: 5, distance: "On airport grounds", price: "$299/night", rating: 4.6, reviews: 3421, image: "🏨", amenities: ["Free WiFi", "Spa", "Restaurant", "Bar"], address: "Terminal 5, Heathrow Airport, London" },
+    { name: "Hilton London Heathrow T4", stars: 4, distance: "0.3 miles from LHR", price: "$199/night", rating: 4.3, reviews: 4102, image: "🏩", amenities: ["Pool", "Gym", "Restaurant", "WiFi"], address: "Terminal 4, Heathrow Airport" },
+    { name: "Marriott London Heathrow", stars: 4, distance: "0.5 miles from LHR", price: "$179/night", rating: 4.2, reviews: 2876, image: "🏪", amenities: ["Free Shuttle", "Gym", "Bar", "WiFi"], address: "Bath Rd, Harlington, Hayes" },
+  ],
+  LOS: [
+    { name: "Eko Hotel & Suites", stars: 5, distance: "8 miles from LOS", price: "$180/night", rating: 4.5, reviews: 1243, image: "🏨", amenities: ["Pool", "Spa", "Restaurant", "WiFi"], address: "Plot 1415, Adetokunbo Ademola, VI" },
+    { name: "Federal Palace Hotel", stars: 5, distance: "9 miles from LOS", price: "$165/night", rating: 4.3, reviews: 987, image: "🏩", amenities: ["Pool", "Gym", "Restaurant", "Bar"], address: "6 Catholic Mission St, Lagos Island" },
+    { name: "Lagos Continental Hotel", stars: 4, distance: "7 miles from LOS", price: "$130/night", rating: 4.1, reviews: 754, image: "🏪", amenities: ["Pool", "Restaurant", "WiFi", "Gym"], address: "2-4 Kofo Abayomi St, Victoria Island" },
+  ],
+};
+
+const CARS_DATA = {
+  JFK: [
+    { company: "Hertz", logo: "🚗", car: "Toyota Camry", category: "Mid-size", price: "$45/day", transmission: "Automatic", seats: 5, rating: 4.5, free_cancel: true },
+    { company: "Enterprise", logo: "🚙", car: "Ford Explorer", category: "SUV", price: "$78/day", transmission: "Automatic", seats: 7, rating: 4.6, free_cancel: true },
+    { company: "Avis", logo: "🚕", car: "Chevrolet Malibu", category: "Mid-size", price: "$42/day", transmission: "Automatic", seats: 5, rating: 4.3, free_cancel: false },
+    { company: "Budget", logo: "🚌", car: "Nissan Altima", category: "Mid-size", price: "$38/day", transmission: "Automatic", seats: 5, rating: 4.2, free_cancel: false },
+    { company: "National", logo: "🚐", car: "Mercedes C-Class", category: "Luxury", price: "$125/day", transmission: "Automatic", seats: 5, rating: 4.8, free_cancel: true },
+  ],
+  LHR: [
+    { company: "Europcar", logo: "🚗", car: "Volkswagen Golf", category: "Compact", price: "£38/day", transmission: "Manual", seats: 5, rating: 4.4, free_cancel: true },
+    { company: "Hertz", logo: "🚙", car: "BMW 3 Series", category: "Luxury", price: "£95/day", transmission: "Automatic", seats: 5, rating: 4.7, free_cancel: true },
+    { company: "Sixt", logo: "🚕", car: "Ford Focus", category: "Compact", price: "£32/day", transmission: "Manual", seats: 5, rating: 4.3, free_cancel: false },
+  ],
+  LOS: [
+    { company: "Avis Nigeria", logo: "🚗", car: "Toyota Corolla", category: "Compact", price: "₦35,000/day", transmission: "Automatic", seats: 5, rating: 4.3, free_cancel: true },
+    { company: "Hertz Nigeria", logo: "🚙", car: "Toyota Fortuner", category: "SUV", price: "₦65,000/day", transmission: "Automatic", seats: 7, rating: 4.5, free_cancel: true },
+    { company: "Drive Nigeria", logo: "🚕", car: "Honda Accord", category: "Mid-size", price: "₦28,000/day", transmission: "Automatic", seats: 5, rating: 4.1, free_cancel: false },
+  ],
+};
+
+// =========================================================
+// HOTELS & CAR RENTAL
+// =========================================================
+function HotelsCars({ segments }) {
+  const [activeTab, setActiveTab] = useState("hotels");
+  const destCode = segments?.[segments.length - 1]?.to?.code || "JFK";
+  const hotels = HOTELS_DATA[destCode] || HOTELS_DATA["JFK"];
+  const cars = CARS_DATA[destCode] || CARS_DATA["JFK"];
+  const destCity = segments?.[segments.length - 1]?.to?.city || "destination";
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ fontSize: 11, letterSpacing: "0.15em", color: "#94a3b8", marginBottom: 12, paddingLeft: 4 }}>
+        HOTELS & CAR RENTALS AT DESTINATION
+      </div>
+      <div style={{ background: "white", border: "1px solid #e2e8f4", borderRadius: 16, overflow: "hidden" }}>
+
+        {/* Header */}
+        <div style={{ background: "linear-gradient(135deg,#0047AB,#003580)", padding: "18px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", letterSpacing: "0.15em", marginBottom: 3 }}>ARRIVING AT</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "white" }}>{destCity} · {destCode}</div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {["hotels", "cars"].map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: "7px 18px", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, background: activeTab === tab ? "white" : "rgba(255,255,255,0.15)", color: activeTab === tab ? "#0047AB" : "white", transition: "all 0.2s" }}>
+                {tab === "hotels" ? "🏨 Hotels" : "🚗 Car Rentals"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ padding: "20px 24px" }}>
+          {activeTab === "hotels" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {hotels.map((hotel, i) => (
+                <div key={i} style={{ border: "1px solid #e2e8f4", borderRadius: 14, padding: "16px 20px", display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 40, flexShrink: 0 }}>{hotel.image}</div>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{hotel.name}</div>
+                        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{hotel.address}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                          {"⭐".repeat(hotel.stars)}
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginLeft: 4 }}>{hotel.rating}</span>
+                          <span style={{ fontSize: 11, color: "#94a3b8" }}>({hotel.reviews.toLocaleString()} reviews)</span>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: "#0047AB" }}>{hotel.price}</div>
+                        <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>per night</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
+                      <div style={{ fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
+                        📍 {hotel.distance}
+                      </div>
+                      {hotel.amenities.map(a => (
+                        <span key={a} style={{ fontSize: 10, background: "#f0f4ff", color: "#0047AB", padding: "2px 8px", borderRadius: 20, fontWeight: 600 }}>{a}</span>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+                      <button style={{ padding: "8px 20px", background: "linear-gradient(135deg,#0047AB,#003580)", color: "white", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Book Now</button>
+                      <button style={{ padding: "8px 16px", background: "#f8faff", color: "#0047AB", border: "1px solid #0047AB", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>View Details</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
+              {cars.map((car, i) => (
+                <div key={i} style={{ border: "1px solid #e2e8f4", borderRadius: 14, padding: "16px", position: "relative", overflow: "hidden" }}>
+                  {car.free_cancel && (
+                    <div style={{ position: "absolute", top: 12, right: 12, background: "#f0fdf4", color: "#16a34a", fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 20, letterSpacing: "0.06em" }}>FREE CANCEL</div>
+                  )}
+                  <div style={{ fontSize: 36, marginBottom: 10 }}>{car.logo}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{car.car}</div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{car.company} · {car.category}</div>
+                  <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+                    {[["👥", car.seats + " seats"], ["⚙️", car.transmission], ["⭐", car.rating]].map(([icon, val]) => (
+                      <div key={val} style={{ fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 3 }}>
+                        <span>{icon}</span><span>{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14 }}>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#CC0000" }}>{car.price}</div>
+                    <button style={{ padding: "8px 18px", background: "linear-gradient(135deg,#CC0000,#a80000)", color: "white", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Reserve</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =========================================================
 // MAIN APP
 // =========================================================
 export default function App() {
+  // Simple client-side routing
+  const path = window.location.pathname;
+  const urlParams = new URLSearchParams(window.location.search);
+  if (path === "/checkin") return <CheckIn />;
+
   const [darkMode, setDarkMode] = useState(false);
   const [input, setInput] = useState("");
   const [result, setResult] = useState(null);
@@ -2208,6 +2374,9 @@ export default function App() {
                 ))}
               </div>
             </div>
+
+            {/* Hotels & Cars */}
+            {result.segments?.length > 0 && <HotelsCars segments={result.segments} />}
 
             {/* Boarding Pass */}
             <div style={{ background: dm.card, borderRadius: 16, overflow: "hidden", border: "1px solid " + dm.cardBorder, transition: "background 0.3s" }}>
