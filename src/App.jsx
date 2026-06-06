@@ -245,12 +245,12 @@ function VisaRequirements({ entries }) {
 
         {/* Header */}
         <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", padding: "18px 28px", display: "flex", gap: 14, alignItems: "center" }}>
-          <span style={{ fontSize: 28 }}>🇳🇬</span>
-          <div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.15em", marginBottom: 3 }}>PASSPORT</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Nigerian Passport Holder</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Route: LOS → LHR (transit) → JFK (entry)</div>
-          </div>
+          <span style={{ fontSize: 28 }}>🇺🇸</span>
+<div>
+  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.15em", marginBottom: 3 }}>PASSPORT</div>
+  <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>US Passport Holder</div>
+  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Route: HOU → DFW (layover) → FRA (entry)</div>
+</div>
           <div style={{ marginLeft: "auto", fontSize: 10, color: "rgba(255,255,255,0.3)", textAlign: "right", lineHeight: 1.6 }}>
             ⚠ Not legal advice.<br />Verify with official sources.
           </div>
