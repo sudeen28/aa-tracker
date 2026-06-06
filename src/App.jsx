@@ -679,8 +679,7 @@ const CABIN_CONFIG = {
 function SeatMap({ config }) {
   const [hoveredSeat, setHoveredSeat] = useState(null);
   const [selectedFlight, setSelectedFlight] = useState(0);
-  
-  // ✅ ADD THESE — were missing, causing the crash
+
   const activeConfig = config || CABIN_CONFIG;
   const [chosenSeat, setChosenSeat] = useState(
     activeConfig.selected_seat || activeConfig.selectedSeat || "14A"
@@ -688,7 +687,7 @@ function SeatMap({ config }) {
   const [seatChanged, setSeatChanged] = useState(false);
   const [seatSaved, setSeatSaved] = useState(false);
 
-const handleSeatClick = (row, col) => {
+  const handleSeatClick = (row, col) => {
     const seatId = row + col;
     const occupied = activeConfig.occupied || [];
     if (occupied.includes(seatId)) return;
@@ -698,16 +697,11 @@ const handleSeatClick = (row, col) => {
     setSeatSaved(false);
   };
 
-  // ✅ ADD THIS BACK — was removed accidentally
   const cfg = config || null;
   const flights = cfg ? [{ label: cfg.flight_label, aircraft: cfg.aircraft }] : [
     { label: "AA 0081 · LOS → LHR", aircraft: "Boeing 777-300ER" },
     { label: "AA 0100 · LHR → JFK", aircraft: "Boeing 787-9 Dreamliner" },
   ];
-
-  const getSeatStatus = (row, col) => {
-
-  // ... rest of the component unchanged
 
   const getSeatStatus = (row, col) => {
     const seatId = row + col;
@@ -729,8 +723,7 @@ const handleSeatClick = (row, col) => {
     return "1px solid " + sectionColor + "60";
   };
 
-  return (
-    <div style={{ marginBottom: 20 }}>
+  return (<div style={{ marginBottom: 20 }}>
       <div style={{ fontSize: 11, letterSpacing: "0.15em", color: "#94a3b8", marginBottom: 12, paddingLeft: 4 }}>SEAT MAP</div>
       <div style={{ background: "white", border: "1px solid #e2e8f4", borderRadius: 16, overflow: "hidden" }}>
 
