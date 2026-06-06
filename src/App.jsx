@@ -688,7 +688,7 @@ function SeatMap({ config }) {
   const [seatChanged, setSeatChanged] = useState(false);
   const [seatSaved, setSeatSaved] = useState(false);
 
-  const handleSeatClick = (row, col) => {
+const handleSeatClick = (row, col) => {
     const seatId = row + col;
     const occupied = activeConfig.occupied || [];
     if (occupied.includes(seatId)) return;
@@ -697,6 +697,15 @@ function SeatMap({ config }) {
     setSeatChanged(seatId !== original);
     setSeatSaved(false);
   };
+
+  // ✅ ADD THIS BACK — was removed accidentally
+  const cfg = config || null;
+  const flights = cfg ? [{ label: cfg.flight_label, aircraft: cfg.aircraft }] : [
+    { label: "AA 0081 · LOS → LHR", aircraft: "Boeing 777-300ER" },
+    { label: "AA 0100 · LHR → JFK", aircraft: "Boeing 787-9 Dreamliner" },
+  ];
+
+  const getSeatStatus = (row, col) => {
 
   // ... rest of the component unchanged
 
