@@ -679,13 +679,27 @@ const CABIN_CONFIG = {
 function SeatMap({ config }) {
   const [hoveredSeat, setHoveredSeat] = useState(null);
   const [selectedFlight, setSelectedFlight] = useState(0);
-  const cfg = config || null;
-  const flights = cfg ? [{ label: cfg.flight_label, aircraft: cfg.aircraft }] : [
-    { label: "AA 0081 · LOS → LHR", aircraft: "Boeing 777-300ER" },
-    { label: "AA 0100 · LHR → JFK", aircraft: "Boeing 787-9 Dreamliner" },
-  ];
+  
+  // ✅ ADD THESE — were missing, causing the crash
+  const activeConfig = config || CABIN_CONFIG;
+  const [chosenSeat, setChosenSeat] = useState(
+    activeConfig.selected_seat || activeConfig.selectedSeat || "14A"
+  );
+  const [seatChanged, setSeatChanged] = useState(false);
+  const [seatSaved, setSeatSaved] = useState(false);
 
-  const activeConfig = cfg || CABIN_CONFIG;
+  const handleSeatClick = (row, col) => {
+    const seatId = row + col;
+    const occupied = activeConfig.occupied || [];
+    if (occupied.includes(seatId)) return;
+    const original = activeConfig.selected_seat || activeConfig.selectedSeat;
+    setChosenSeat(seatId);
+    setSeatChanged(seatId !== original);
+    setSeatSaved(false);
+  };
+
+  // ... rest of the component unchanged
+
   const getSeatStatus = (row, col) => {
     const seatId = row + col;
     if (seatId === activeConfig.selected_seat || seatId === activeConfig.selectedSeat) return "selected";
@@ -1256,7 +1270,10 @@ function QRCode({ value, size = 130 }) {
 // =========================================================
 function RouteMap({ segments }) {
   const canvasRef = useRef(null);
-  const airports = [segments[0].from, segments[0].to, segments[1].to];
+  const airports = segments?.length
+  ? [segments[0]?.from, ...segments.map(seg => seg.to)].filter(Boolean)
+  : [];
+  // const airports = [segments[0].from, segments[0].to, segments[1].to];
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -2158,7 +2175,48 @@ export default function App() {
     divider: darkMode ? "#334155" : "#e2e8f4",
   };
 
-  const qrData = result ? ["AMERICAN AIRLINES","PNR: "+result.pnr,"PAX: "+result.passenger.title+" "+result.passenger.name,"FLIGHT: AA0081/AA0100","ROUTE: LOS-LHR-JFK","DATE: JUN 14 2026","SEAT: 14A | CLASS: ECONOMY","TICKET: "+result.ticket_number,"STATUS: "+result.status].join("\n") : "";
+  const firstSeg = result?.segments?.[0];
+const lastSeg = result?.segments?.[result.segments.length - 1];
+
+const qrData = result ? [
+  "AMERICAN AIRLINES",
+  "PNR: " + result.pnr,
+  "PAX: " + (result.passenger?.title || "") + " " + (result.passenger?.name || "Passenger"),
+  "FLIGHT: " + (firstSeg?.flight || "N/A"),
+  "ROUTE: " + (firstSeg?.from?.code || "N/A") + "-" + (lastSeg?.to?.code || "N/A"),
+  "DATE: " + (firstSeg?.departs || "N/A"),
+  "SEAT: " + (firstSeg?.seat || "N/A") + " | CLASS: " + (firstSeg?.class || "N/A"),
+  "TICKET: " + (result.ticket_number || "N/A"),
+  "STATUS: " + (result.status || "N/A"),
+].join("\n") : "";
+
+  const normalizeBooking = (booking) => ({
+  ...booking,
+  passenger: booking.passenger || {
+    title: "",
+    name: "Passenger",
+    frequent_flyer: "N/A",
+    passport: "N/A",
+  },
+  segments: Array.isArray(booking.segments) ? booking.segments : [],
+  baggage: booking.baggage || {
+    personal: "N/A",
+    carry_on: "N/A",
+    checked: "N/A",
+  },
+  fare: booking.fare || {
+    cabin_class: "N/A",
+    basis: "N/A",
+    valid_before: "N/A",
+    valid_after: "N/A",
+  },
+  alerts: booking.alerts || [],
+  baggage_stages: booking.baggage_stages || [],
+  meal_options: booking.meal_options || [],
+  assistance_options: booking.assistance_options || [],
+  visa_entries: booking.visa_entries || [],
+  seat_config: booking.seat_config || null,
+});
 
   const handleSearch = async () => {
     if (!input.trim()) return;
@@ -2177,7 +2235,7 @@ export default function App() {
           CHECKIN_OPEN.setTime(parsed.getTime() - 24 * 60 * 60 * 1000);
         }
       }
-      setResult(data);
+      setResult(normalizeBooking(data));
     } catch (err) {
       setError('No booking found for PNR "' + input.trim().toUpperCase() + '". ' + (err.message !== "Booking not found." ? "" : ""));
     } finally {
@@ -2402,7 +2460,7 @@ export default function App() {
                   </div>
                   <div style={{ width: 1, height: 160, background: "#e2e8f4", flexShrink: 0 }} />
                   <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 32px" }}>
-                    {[["PASSENGER",result.passenger.title+" "+result.passenger.name],["PNR",result.pnr],["SEAT",result.segments[0].seat],["CLASS",result.segments[0].class],["FROM",result.segments[0].from.code+" — "+result.segments[0].from.city],["TO",result.segments[1].to.code+" — "+result.segments[1].to.city],["DEPARTURE",result.segments[0].dep_time+" · "+result.segments[0].departs],["ARRIVAL",result.segments[1].arr_time+" · "+result.segments[1].arrives]].map(([l,v]) => (
+                    {[["PASSENGER",result.passenger.title+" "+result.passenger.name],["PNR",result.pnr],["SEAT",result.segments[0].seat],["CLASS",result.segments[0].class],["FROM",result.segments[0].from.code+" — "+result.segments[0].from.city],["TO",(result.segments[result.segments.length - 1]?.to?.code || "N/A") + " — " + (result.segments[result.segments.length - 1]?.to?.city || "N/A")],["DEPARTURE",result.segments[0].dep_time+" · "+result.segments[0].departs],["ARRIVAL",(result.segments[result.segments.length - 1]?.arr_time || "N/A") + " · " + (result.segments[result.segments.length - 1]?.arrives || "N/A")]].map(([l,v]) => (
                       <div key={l}><div style={{ fontSize: 9, color: "#94a3b8", letterSpacing: "0.12em", marginBottom: 2 }}>{l}</div><div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{v}</div></div>
                     ))}
                   </div>
