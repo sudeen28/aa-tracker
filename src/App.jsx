@@ -780,60 +780,37 @@ function SeatMap({ config }) {
                 ))}
               </div>
 
-              {(activeConfig.sections || CABIN_CONFIG.sections).map(section => (
-                <div key={section.name}>
-                  {/* Section label */}
-                  <div style={{ fontSize: 9, fontWeight: 700, color: section.color, letterSpacing: "0.15em", marginBottom: 4, marginTop: 8, textAlign: "center", padding: "2px 8px", background: section.color + "15", borderRadius: 4 }}>
-                    {section.name.toUpperCase()}
-                  </div>
-                  {section.rows.map(row => (
-                    <div key={row} style={{ display: "flex", alignItems: "center", marginBottom: 3 }}>
-                      {/* Row number */}
-                      <div style={{ width: 24, fontSize: 9, color: "#94a3b8", textAlign: "right", marginRight: 8, flexShrink: 0 }}>{row}</div>
-
-                      {/* Seats with aisle gaps */}
-                      {["A","B","C","aisle1","D","E","F","G","aisle2","H","J","K"].map((col, ci) => {
-                        if (col.startsWith("aisle")) return <div key={ci} style={{ width: 14, flexShrink: 0, marginRight: 3 }} />;
-                        const status = getSeatStatus(row, col);
-                        const isSelected = status === "selected";
-                        const isExit = (activeConfig.exits || []).includes(row);
-                        return (
-                          <div
-                            key={col}
-                            onClick={() => handleSeatClick(row, col)}
-                            onMouseEnter={() => setHoveredSeat(row + col)}
-                            onMouseLeave={() => setHoveredSeat(null)}
-                            style={{
-                              width: 24, height: 20, borderRadius: "4px 4px 2px 2px",
-                              background: getSeatColor(status, section.color),
-                              border: getSeatBorder(status, section.color),
-                              flexShrink: 0, marginRight: 3, cursor: status === "occupied" ? "not-allowed" : "pointer",
-                              position: "relative", transition: "transform 0.1s",
-                              transform: hoveredSeat === row + col && status !== "occupied" ? "scale(1.2)" : "scale(1)",
-                              boxShadow: isSelected ? "0 0 0 3px rgba(204,0,0,0.3)" : "none",
-                            }}
-                          >
-                            {isSelected && (
-                              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "white" }} />
-                              </div>
-                            )}
-                            {isExit && row === CABIN_CONFIG.exits[0] && col === "A" && (
-                              <div style={{ position: "absolute", left: -18, top: "50%", transform: "translateY(-50%)", fontSize: 8, color: "#22c55e", fontWeight: 700 }}>EXIT</div>
-                            )}
-                          </div>
-                        );
-                      })}
-
-                      {/* Exit marker */}
-                      {(activeConfig.exits || []).includes(row) && (
-                        <div style={{ marginLeft: 8, fontSize: 8, color: "#22c55e", fontWeight: 700, letterSpacing: "0.05em" }}>← EXIT</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ))}
-
+              {(activeConfig.sections || CABIN_CONFIG.sections).map(section => {
+  const sectionColor = section.color || "#64748b";
+  return (
+  <div key={section.name}>
+    <div style={{ fontSize: 9, fontWeight: 700, color: sectionColor, letterSpacing: "0.15em", marginBottom: 4, marginTop: 8, textAlign: "center", padding: "2px 8px", background: sectionColor + "15", borderRadius: 4 }}>
+      {section.name.toUpperCase()}
+    </div>
+    {section.rows.map(rowItem => {
+      const row = typeof rowItem === "object" ? rowItem.row : rowItem;
+      return (
+        <div key={row} style={{ display: "flex", alignItems: "center", marginBottom: 3 }}>
+          <div style={{ width: 24, fontSize: 9, color: "#94a3b8", textAlign: "right", marginRight: 8, flexShrink: 0 }}>{row}</div>
+          {["A","B","C","aisle1","D","E","F","G","aisle2","H","J","K"].map((col, ci) => {
+            if (col.startsWith("aisle")) return <div key={ci} style={{ width: 14, flexShrink: 0, marginRight: 3 }} />;
+            const status = getSeatStatus(row, col);
+            const isSelected = status === "selected";
+            const isExit = (activeConfig.exits || []).includes(row);
+            return (
+              <div key={col} onClick={() => handleSeatClick(row, col)} onMouseEnter={() => setHoveredSeat(row + col)} onMouseLeave={() => setHoveredSeat(null)}
+                style={{ width: 24, height: 20, borderRadius: "4px 4px 2px 2px", background: getSeatColor(status, sectionColor), border: getSeatBorder(status, sectionColor), flexShrink: 0, marginRight: 3, cursor: status === "occupied" ? "not-allowed" : "pointer", position: "relative", transition: "transform 0.1s", transform: hoveredSeat === row + col && status !== "occupied" ? "scale(1.2)" : "scale(1)", boxShadow: isSelected ? "0 0 0 3px rgba(204,0,0,0.3)" : "none" }}>
+                {isSelected && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ width: 6, height: 6, borderRadius: "50%", background: "white" }} /></div>}
+              </div>
+            );
+          })}
+          {(activeConfig.exits || []).includes(row) && <div style={{ marginLeft: 8, fontSize: 8, color: "#22c55e", fontWeight: 700, letterSpacing: "0.05em" }}>← EXIT</div>}
+        </div>
+      );
+    })}
+  </div>
+  );
+})}
               {/* Aircraft tail */}
               <div style={{ textAlign: "center", marginTop: 10 }}>
                 <div style={{ display: "inline-block", padding: "3px 20px", background: "#f1f5f9", borderRadius: 20, fontSize: 11, color: "#94a3b8", letterSpacing: "0.1em" }}>TAIL</div>
