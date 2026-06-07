@@ -2483,12 +2483,12 @@ const qrData = result ? [
         )}
 
         {!result && !error && !loading && (
-          <div style={{ textAlign: "center", padding: "40px 0", color: dm.muted }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>✈</div>
-            <div style={{ fontSize: 14 }}>Enter your PNR above to view your booking</div>
-            <div style={{ fontSize: 12, marginTop: 6, opacity: 0.6 }}>Demo PNR: <strong>AA7X4K2</strong></div>
-          </div>
-        )}
+  <div style={{ textAlign: "center", padding: "40px 0", color: dm.muted }}>
+    <div style={{ fontSize: 40, marginBottom: 12 }}>✈</div>
+    <div style={{ fontSize: 14 }}>Enter your PNR above to view your booking</div>
+  </div>
+)}
+      
       </div>
     </div>
   );
