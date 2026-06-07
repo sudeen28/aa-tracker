@@ -2344,7 +2344,7 @@ const qrData = result ? [
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 6px #4ade80", animation: "pulse 2s infinite" }} />
                     <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.08em" }}>{result.status}</span>
                   </div>
-                  <div style={{ marginTop: 10, fontSize: 12, opacity: 0.5, textAlign: "right" }}>LOS → LHR → JFK</div>
+                  <div style={{ marginTop: 10, fontSize: 12, opacity: 0.5, textAlign: "right" }}>{result.segments.map(s => s.from.code).join(" → ")} → {result.segments[result.segments.length - 1].to.code}</div>
                 </div>
               </div>
             </div>
