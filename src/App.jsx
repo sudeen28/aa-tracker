@@ -2426,17 +2426,17 @@ const qrData = result ? [
             {/* Boarding Pass */}
             <div style={{ background: dm.card, borderRadius: 16, overflow: "hidden", border: "1px solid " + dm.cardBorder, transition: "background 0.3s" }}>
               <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>BOARDING PASS</div>
-                  <div style={{ color: "white", fontSize: 18, fontWeight: 700, marginTop: 2 }}>LOS → JFK</div>
-                  <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>via London Heathrow</div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>FLIGHTS</div>
-                  <div style={{ color: "white", fontSize: 16, fontWeight: 700, marginTop: 2 }}>AA 0081 / AA 0100</div>
-                  <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>Jun 14 – Jun 15, 2026</div>
-                </div>
-              </div>
+  <div>
+    <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>BOARDING PASS</div>
+    <div style={{ color: "white", fontSize: 18, fontWeight: 700, marginTop: 2 }}>{result.segments[0].from.code} → {result.segments[result.segments.length - 1].to.code}</div>
+    {result.segments.length > 1 && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>via {result.segments[0].to.city}</div>}
+  </div>
+  <div style={{ textAlign: "right" }}>
+    <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>FLIGHTS</div>
+    <div style={{ color: "white", fontSize: 16, fontWeight: 700, marginTop: 2 }}>{result.segments.map(s => s.flight).join(" / ")}</div>
+    <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>{result.segments[0].departs} – {result.segments[result.segments.length - 1].arrives}</div>
+  </div>
+</div>
               <div style={{ borderTop: "2px dashed #e2e8f4", padding: "24px 32px" }}>
                 <div style={{ display: "flex", gap: 28, alignItems: "center", flexWrap: "wrap" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
