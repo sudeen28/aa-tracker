@@ -474,13 +474,13 @@ function BaggageTracker({ stages }) {
         </div>
 
         <div style={{ padding: "24px 28px" }}>
-
+BaggageTracker
           {/* Progress bar */}
           <div style={{ marginBottom: 28 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#94a3b8", marginBottom: 8 }}>
-              <span>LOS Check-in</span>
-              <span style={{ color: "#0047AB", fontWeight: 600 }}>{Math.round(progressPct)}% complete</span>
-              <span>JFK Pickup</span>
+              <span>{displayStages[0]?.label || "Check-in"}</span>
+<span style={{ color: "#0047AB", fontWeight: 600 }}>{Math.round(progressPct)}% complete</span>
+<span>{displayStages[displayStages.length - 1]?.label || "Pickup"}</span>
             </div>
             <div style={{ height: 8, background: "#f1f5f9", borderRadius: 10, overflow: "hidden" }}>
               <div style={{ height: "100%", width: progressPct + "%", background: "linear-gradient(90deg,#0047AB,#4ade80)", borderRadius: 10, transition: "width 0.6s ease" }} />
@@ -532,12 +532,13 @@ function BaggageTracker({ stages }) {
           </div>
 
           {/* Info note */}
-          <div style={{ marginTop: 20, padding: "10px 16px", background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, display: "flex", gap: 10, alignItems: "flex-start" }}>
-            <span style={{ fontSize: 16 }}>ℹ️</span>
-            <div style={{ fontSize: 12, color: "#0369a1" }}>
-              Bag is currently <strong>loaded on AA 0081</strong> and in transit to London Heathrow. Updates will reflect once the flight lands and transfer is processed.
-            </div>
-          </div>
+          {/* Info note */}
+<div style={{ marginTop: 20, padding: "10px 16px", background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, display: "flex", gap: 10, alignItems: "flex-start" }}>
+  <span style={{ fontSize: 16 }}>ℹ️</span>
+  <div style={{ fontSize: 12, color: "#0369a1" }}>
+    Bag is currently <strong>loaded on AA 0081</strong> and in transit to London Heathrow. Updates will reflect once the flight lands and transfer is processed.
+  </div>
+</div>
         </div>
       </div>
     </div>
@@ -1245,8 +1246,9 @@ function QRCode({ value, size = 130 }) {
     if (!el) return;
     el.innerHTML = "";
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js").then(() => {
-      el.innerHTML = "";
-      new window.QRCode(el, { text: value, width: size, height: size, colorDark: "#0f172a", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.H });
+      if (!ref.current) return;
+      ref.current.innerHTML = "";
+      new window.QRCode(ref.current, { text: value, width: size, height: size, colorDark: "#0f172a", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.H });
     });
   }, [value, size]);
   return <div ref={ref} style={{ width: size, height: size, borderRadius: 10, overflow: "hidden", flexShrink: 0 }} />;
