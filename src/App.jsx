@@ -597,8 +597,6 @@ const MEAL_OPTIONS = [
 
         <div style={{ padding: "22px 28px" }}>
           {flights.map((flight, fi) => {
-            const routes = ["LOS → LHR", "LHR → JFK"];
-            const dates = ["Jun 14, 2026 · 23:45", "Jun 15, 2026 · 10:10"];
             return (
               <div key={flight} style={{ marginBottom: fi === 0 ? 28 : 0 }}>
                 {/* Flight label */}
