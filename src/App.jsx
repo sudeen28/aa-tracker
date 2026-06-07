@@ -532,13 +532,7 @@ BaggageTracker
           </div>
 
           {/* Info note */}
-          {/* Info note */}
-<div style={{ marginTop: 20, padding: "10px 16px", background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, display: "flex", gap: 10, alignItems: "flex-start" }}>
-  <span style={{ fontSize: 16 }}>ℹ️</span>
-  <div style={{ fontSize: 12, color: "#0369a1" }}>
-    Bag is currently <strong>loaded on AA 0081</strong> and in transit to London Heathrow. Updates will reflect once the flight lands and transfer is processed.
-  </div>
-</div>
+          
         </div>
       </div>
     </div>
