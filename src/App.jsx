@@ -1233,17 +1233,18 @@ function StatusBanner({ alerts }) {
 // =========================================================
 // QR CODE
 // =========================================================
-function QRCode({ value, size = 130 }) {
+function QRCode({ value, size = 130, delay = 0 }) {
   const ref = useRef(null);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    el.innerHTML = "";
-    loadScript("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js").then(() => {
-      if (!ref.current) return;
-      ref.current.innerHTML = "";
-      new window.QRCode(ref.current, { text: value, width: size, height: size, colorDark: "#0f172a", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.H });
-    });
+    setTimeout(() => {
+      loadScript("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js").then(() => {
+        if (!ref.current) return;
+        ref.current.innerHTML = "";
+        new window.QRCode(ref.current, { text: value, width: size, height: size, colorDark: "#0f172a", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.H });
+      });
+    }, delay);
   }, [value, size]);
   return <div ref={ref} style={{ width: size, height: size, borderRadius: 10, overflow: "hidden", flexShrink: 0 }} />;
 }
@@ -2430,14 +2431,14 @@ const qrData = result ? [
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
           <div style={{ background: "#f8faff", padding: 10, borderRadius: 14, border: "1px solid #e2e8f4" }}>
             <QRCode value={[
-              "AMERICAN AIRLINES",
-              "PNR: " + result.pnr,
-              "PAX: " + result.passenger.title + " " + result.passenger.name,
-              "FLIGHT: " + seg.flight,
-              "ROUTE: " + seg.from.code + "-" + seg.to.code,
-              "DATE: " + seg.departs,
-              "SEAT: " + seg.seat + " | CLASS: " + seg.class,
-            ].join("\n")} size={130} />
+  "AMERICAN AIRLINES",
+  "PNR: " + result.pnr,
+  "PAX: " + result.passenger.title + " " + result.passenger.name,
+  "FLIGHT: " + seg.flight,
+  "ROUTE: " + seg.from.code + "-" + seg.to.code,
+  "DATE: " + seg.departs,
+  "SEAT: " + seg.seat + " | CLASS: " + seg.class,
+].join("\n")} size={130} delay={si * 300} />
           </div>
           <div style={{ fontSize: 10, color: "#94a3b8", letterSpacing: "0.1em" }}>SCAN TO VERIFY</div>
         </div>
