@@ -1371,155 +1371,141 @@ async function downloadBoardingPass(booking) {
   await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
   const { jsPDF } = window.jspdf;
 
-  // Landscape boarding pass dimensions
-  const doc = new jsPDF({ unit: "pt", format: [680, 240], orientation: "landscape" });
-  const W = 680, H = 240;
-  const seg = booking.segments[0];
+  for (const seg of booking.segments) {
+    const doc = new jsPDF({ unit: "pt", format: [680, 240], orientation: "landscape" });
+    const W = 680, H = 240;
 
-  // Background
-  doc.setFillColor(15, 23, 42);
-  doc.rect(0, 0, W, H, "F");
+    // Background
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, W, H, "F");
 
-  // Left colored strip
-  doc.setFillColor(204, 0, 0);
-  doc.rect(0, 0, 6, H, "F");
+    // AA Logo area
+    doc.setFillColor(204, 0, 0);
+    doc.rect(0, 0, 120, H, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11); doc.setFont("helvetica", "bold");
+    doc.text("AMERICAN", 14, 30);
+    doc.text("AIRLINES", 14, 44);
+    doc.setFontSize(7); doc.setFont("helvetica", "normal");
+    doc.text("AAdvantage®", 14, 58);
+    doc.setFontSize(40);
+    doc.text("✈", 30, 120);
+    doc.setFontSize(8); doc.setFont("helvetica", "bold");
+    doc.text("BOARDING", 14, 160);
+    doc.text("PASS", 14, 172);
+    doc.setFontSize(7); doc.setFont("helvetica", "normal");
+    doc.setTextColor(180, 180, 180);
+    doc.text("ECONOMY", 14, 196);
+    doc.text(seg.seat, 14, 208);
 
-  // AA Logo area
-  doc.setFillColor(204, 0, 0);
-  doc.rect(0, 0, 120, H, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(11); doc.setFont("helvetica", "bold");
-  doc.text("AMERICAN", 14, 30);
-  doc.text("AIRLINES", 14, 44);
-  doc.setFontSize(7); doc.setFont("helvetica", "normal");
-  doc.text("AAdvantage®", 14, 58);
+    // Dashed tear line
+    doc.setDrawColor(255, 255, 255); doc.setLineDash([3, 3]); doc.setLineWidth(0.5);
+    doc.line(120, 10, 120, H - 10);
+    doc.setLineDash([]);
 
-  // Big plane icon area
-  doc.setFontSize(40);
-  doc.text("✈", 30, 120);
+    const mx = 136;
 
-  doc.setFontSize(8); doc.setFont("helvetica", "bold");
-  doc.text("BOARDING", 14, 160);
-  doc.text("PASS", 14, 172);
+    // Passenger name
+    doc.setTextColor(148, 163, 184);
+    doc.setFontSize(7); doc.setFont("helvetica", "normal");
+    doc.text("PASSENGER NAME", mx, 22);
+    doc.setFontSize(16); doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text(booking.passenger.title + " " + booking.passenger.name, mx, 40);
 
-  doc.setFontSize(7); doc.setFont("helvetica", "normal");
-  doc.setTextColor(180, 180, 180);
-  doc.text("ECONOMY", 14, 196);
-  doc.text(seg.seat, 14, 208);
+    // Route
+    doc.setFontSize(48); doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text(seg.from.code, mx, 110);
+    doc.text(seg.to.code, mx + 220, 110);
 
-  // Dashed tear line
-  doc.setDrawColor(255, 255, 255); doc.setLineDash([3, 3]); doc.setLineWidth(0.5);
-  doc.line(120, 10, 120, H - 10);
-  doc.setLineDash([]);
+    // Arrow
+    doc.setFontSize(14);
+    doc.setTextColor(204, 0, 0);
+    doc.text("→", mx + 158, 100);
+    doc.setFontSize(8); doc.setFont("helvetica", "normal");
+    doc.setTextColor(148, 163, 184);
+    doc.text(seg.duration, mx + 155, 114);
 
-  // Main content area
-  const mx = 136;
+    // City names
+    doc.setFontSize(9); doc.setFont("helvetica", "normal");
+    doc.setTextColor(148, 163, 184);
+    doc.text(seg.from.city, mx, 122);
+    doc.text(seg.to.city, mx + 220, 122);
 
-  // Passenger name
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(7); doc.setFont("helvetica", "normal");
-  doc.setTextColor(148, 163, 184);
-  doc.text("PASSENGER NAME", mx, 22);
-  doc.setFontSize(16); doc.setFont("helvetica", "bold");
-  doc.setTextColor(255, 255, 255);
-  doc.text(booking.passenger.title + " " + booking.passenger.name, mx, 40);
+    // Details row
+    const details = [
+      ["FLIGHT", seg.flight],
+      ["DATE", seg.departs],
+      ["DEPARTS", seg.dep_time],
+      ["ARRIVES", seg.arr_time],
+      ["SEAT", seg.seat],
+      ["CLASS", seg.class],
+      ["GATE", seg.from.gate],
+    ];
+    details.forEach(([label, val], i) => {
+      const dx = mx + i * 74;
+      doc.setFontSize(7); doc.setFont("helvetica", "normal");
+      doc.setTextColor(100, 116, 139);
+      doc.text(label, dx, 148);
+      doc.setFontSize(10); doc.setFont("helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      doc.text(val, dx, 163);
+    });
 
-  // Route — big airport codes
-  doc.setFontSize(48); doc.setFont("helvetica", "bold");
-  doc.setTextColor(255, 255, 255);
-  doc.text(seg.from.code, mx, 110);
-  doc.text(seg.to.code, mx + 220, 110);
-
-  // Arrow
-  doc.setFontSize(14);
-  doc.setTextColor(204, 0, 0);
-  doc.text("→", mx + 158, 100);
-  doc.setFontSize(8); doc.setFont("helvetica", "normal");
-  doc.setTextColor(148, 163, 184);
-  doc.text(seg.duration, mx + 155, 114);
-
-  // City names
-  doc.setFontSize(9); doc.setFont("helvetica", "normal");
-  doc.setTextColor(148, 163, 184);
-  doc.text(seg.from.city, mx, 122);
-  doc.text(seg.to.city, mx + 220, 122);
-
-  // Details row
-  const details = [
-    ["FLIGHT", seg.flight],
-    ["DATE", seg.departs],
-    ["DEPARTS", seg.dep_time],
-    ["ARRIVES", seg.arr_time],
-    ["SEAT", seg.seat],
-    ["CLASS", seg.class],
-    ["GATE", seg.from.gate],
-  ];
-  details.forEach(([label, val], i) => {
-    const dx = mx + i * 74;
+    // PNR
     doc.setFontSize(7); doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 116, 139);
-    doc.text(label, dx, 148);
-    doc.setFontSize(10); doc.setFont("helvetica", "bold");
+    doc.text("BOOKING REF", mx, 186);
+    doc.setFontSize(14); doc.setFont("helvetica", "bold");
     doc.setTextColor(255, 255, 255);
-    doc.text(val, dx, 163);
-  });
+    doc.text(booking.pnr, mx, 202);
+    doc.setFontSize(7); doc.setFont("helvetica", "normal");
+    doc.setTextColor(71, 85, 105);
+    doc.text(booking.ticket_number, mx, 225);
 
-  // PNR
-  doc.setFontSize(7); doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 116, 139);
-  doc.text("BOOKING REF", mx, 186);
-  doc.setFontSize(14); doc.setFont("helvetica", "bold");
-  doc.setTextColor(255, 255, 255);
-  doc.text(booking.pnr, mx, 202);
+    // Dashed tear line before barcode
+    doc.setDrawColor(71, 85, 105); doc.setLineDash([3, 3]); doc.setLineWidth(0.5);
+    doc.line(W - 130, 10, W - 130, H - 10);
+    doc.setLineDash([]);
 
-  // Ticket number
-  doc.setFontSize(7); doc.setFont("helvetica", "normal");
-  doc.setTextColor(71, 85, 105);
-  doc.text(booking.ticket_number, mx, 225);
+    // Barcode stub
+    doc.setFillColor(255, 255, 255);
+    doc.rect(W - 125, 0, 125, H, "F");
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(7); doc.setFont("helvetica", "bold");
+    doc.text("GATE", W - 115, 20);
+    doc.setFontSize(22); doc.setFont("helvetica", "bold");
+    doc.text(seg.from.gate, W - 118, 44);
+    doc.setFontSize(7); doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 116, 139);
+    doc.text("SEAT", W - 115, 62);
+    doc.setFontSize(16); doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(seg.seat, W - 115, 78);
+    doc.setFontSize(7); doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 116, 139);
+    doc.text("DEPARTS", W - 115, 96);
+    doc.setFontSize(13); doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(seg.dep_time, W - 115, 112);
 
-  // Dashed tear line before barcode
-  doc.setDrawColor(71, 85, 105); doc.setLineDash([3, 3]); doc.setLineWidth(0.5);
-  doc.line(W - 130, 10, W - 130, H - 10);
-  doc.setLineDash([]);
+    // Mini barcode
+    let bx = W - 118;
+    for (let i = 0; i < 28; i++) {
+      const bw = Math.random() > 0.5 ? 2.5 : 1;
+      doc.setFillColor(15, 23, 42);
+      doc.rect(bx, 130, bw, 60, "F");
+      bx += bw + (Math.random() > 0.6 ? 2.5 : 1.5);
+    }
+    doc.setFontSize(6); doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 116, 139);
+    doc.text(booking.pnr, W - 118, 204);
+    doc.text("AA · INTL", W - 118, 216);
+    doc.text("ECONOMY", W - 118, 226);
 
-  // Barcode stub area
-  doc.setFillColor(255, 255, 255);
-  doc.rect(W - 125, 0, 125, H, "F");
-  doc.setTextColor(15, 23, 42);
-  doc.setFontSize(7); doc.setFont("helvetica", "bold");
-  doc.text("GATE", W - 115, 20);
-  doc.setFontSize(22); doc.setFont("helvetica", "bold");
-  doc.text(seg.from.gate, W - 118, 44);
-
-  doc.setFontSize(7); doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 116, 139);
-  doc.text("SEAT", W - 115, 62);
-  doc.setFontSize(16); doc.setFont("helvetica", "bold");
-  doc.setTextColor(15, 23, 42);
-  doc.text(seg.seat, W - 115, 78);
-
-  doc.setFontSize(7); doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 116, 139);
-  doc.text("DEPARTS", W - 115, 96);
-  doc.setFontSize(13); doc.setFont("helvetica", "bold");
-  doc.setTextColor(15, 23, 42);
-  doc.text(seg.dep_time, W - 115, 112);
-
-  // Mini barcode lines in stub
-  let bx = W - 118;
-  for (let i = 0; i < 28; i++) {
-    const bw = Math.random() > 0.5 ? 2.5 : 1;
-    doc.setFillColor(15, 23, 42);
-    doc.rect(bx, 130, bw, 60, "F");
-    bx += bw + (Math.random() > 0.6 ? 2.5 : 1.5);
+    doc.save("AA_BoardingPass_" + booking.pnr + "_" + seg.from.code + seg.to.code + ".pdf");
   }
-  doc.setFontSize(6); doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 116, 139);
-  doc.text(booking.pnr, W - 118, 204);
-  doc.text("AA · INTL", W - 118, 216);
-  doc.text("ECONOMY", W - 118, 226);
-
-  doc.save("AA_BoardingPass_" + booking.pnr + "_" + seg.from.code + seg.to.code + ".pdf");
 }
 
 // =========================================================
