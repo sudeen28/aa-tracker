@@ -1367,6 +1367,10 @@ function FlightSegment({ seg, index }) {
 // =========================================================
 // BOARDING PASS DOWNLOAD
 // =========================================================
+async function downloadBoardingPassSingle(booking, segIndex) {
+  const tempBooking = { ...booking, segments: [booking.segments[segIndex]] };
+  await downloadBoardingPass(tempBooking);
+}
 async function downloadBoardingPass(booking) {
   await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
   const { jsPDF } = window.jspdf;
@@ -2410,45 +2414,73 @@ const qrData = result ? [
             {result.segments?.length > 0 && <HotelsCars segments={result.segments} />}
 
             {/* Boarding Pass */}
-            <div style={{ background: dm.card, borderRadius: 16, overflow: "hidden", border: "1px solid " + dm.cardBorder, transition: "background 0.3s" }}>
-              <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-  <div>
-    <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>BOARDING PASS</div>
-    <div style={{ color: "white", fontSize: 18, fontWeight: 700, marginTop: 2 }}>{result.segments[0].from.code} → {result.segments[result.segments.length - 1].to.code}</div>
-    {result.segments.length > 1 && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>via {result.segments[0].to.city}</div>}
-  </div>
-  <div style={{ textAlign: "right" }}>
-    <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>FLIGHTS</div>
-    <div style={{ color: "white", fontSize: 16, fontWeight: 700, marginTop: 2 }}>{result.segments.map(s => s.flight).join(" / ")}</div>
-    <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>{result.segments[0].departs} – {result.segments[result.segments.length - 1].arrives}</div>
-  </div>
-</div>
-              <div style={{ borderTop: "2px dashed #e2e8f4", padding: "24px 32px" }}>
-                <div style={{ display: "flex", gap: 28, alignItems: "center", flexWrap: "wrap" }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                    <div style={{ background: "#f8faff", padding: 10, borderRadius: 14, border: "1px solid #e2e8f4" }}>
-                      <QRCode value={qrData} size={130} />
-                    </div>
-                    <div style={{ fontSize: 10, color: "#94a3b8", letterSpacing: "0.1em" }}>SCAN TO VERIFY</div>
-                  </div>
-                  <div style={{ width: 1, height: 160, background: "#e2e8f4", flexShrink: 0 }} />
-                  <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 32px" }}>
-                    {[["PASSENGER",result.passenger.title+" "+result.passenger.name],["PNR",result.pnr],["SEAT",result.segments[0].seat],["CLASS",result.segments[0].class],["FROM",result.segments[0].from.code+" — "+result.segments[0].from.city],["TO",(result.segments[result.segments.length - 1]?.to?.code || "N/A") + " — " + (result.segments[result.segments.length - 1]?.to?.city || "N/A")],["DEPARTURE",result.segments[0].dep_time+" · "+result.segments[0].departs],["ARRIVAL",(result.segments[result.segments.length - 1]?.arr_time || "N/A") + " · " + (result.segments[result.segments.length - 1]?.arrives || "N/A")]].map(([l,v]) => (
-                      <div key={l}><div style={{ fontSize: 9, color: "#94a3b8", letterSpacing: "0.12em", marginBottom: 2 }}>{l}</div><div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{v}</div></div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px dashed #e2e8f4", textAlign: "center" }}>
-                  <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: "0.25em" }}>{result.ticket_number}</div>
-                  <div style={{ fontSize: 10, color: "#cbd5e1", marginTop: 4 }}>American Airlines · AAdvantage® · americanairlines.com</div>
-                </div>
-                <div style={{ marginTop: 16, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-                  <button onClick={async () => { setBpLoading(true); try { await downloadBoardingPass(result); } catch(e) { console.error(e); } finally { setBpLoading(false); } }} disabled={bpLoading} style={{ padding: "10px 22px", background: bpLoading ? "#94a3b8" : "linear-gradient(135deg,#CC0000,#a80000)", color: "white", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: bpLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 7, boxShadow: bpLoading ? "none" : "0 4px 14px rgba(204,0,0,0.3)" }}>
-                    {bpLoading ? "⏳ Generating..." : "🎫 Download Boarding Pass"}
-                  </button>
-                </div>
-              </div>
+           {/* Boarding Pass */}
+{result.segments.map((seg, si) => (
+  <div key={si} style={{ background: dm.card, borderRadius: 16, overflow: "hidden", border: "1px solid " + dm.cardBorder, transition: "background 0.3s", marginBottom: si < result.segments.length - 1 ? 16 : 0 }}>
+    <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>BOARDING PASS {si + 1} OF {result.segments.length}</div>
+        <div style={{ color: "white", fontSize: 18, fontWeight: 700, marginTop: 2 }}>{seg.from.code} → {seg.to.code}</div>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>{seg.from.city} to {seg.to.city}</div>
+      </div>
+      <div style={{ textAlign: "right" }}>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>FLIGHT</div>
+        <div style={{ color: "white", fontSize: 16, fontWeight: 700, marginTop: 2 }}>{seg.flight}</div>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>{seg.departs}</div>
+      </div>
+    </div>
+    <div style={{ borderTop: "2px dashed #e2e8f4", padding: "24px 32px" }}>
+      <div style={{ display: "flex", gap: 28, alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+          <div style={{ background: "#f8faff", padding: 10, borderRadius: 14, border: "1px solid #e2e8f4" }}>
+            <QRCode value={[
+              "AMERICAN AIRLINES",
+              "PNR: " + result.pnr,
+              "PAX: " + result.passenger.title + " " + result.passenger.name,
+              "FLIGHT: " + seg.flight,
+              "ROUTE: " + seg.from.code + "-" + seg.to.code,
+              "DATE: " + seg.departs,
+              "SEAT: " + seg.seat + " | CLASS: " + seg.class,
+            ].join("\n")} size={130} />
+          </div>
+          <div style={{ fontSize: 10, color: "#94a3b8", letterSpacing: "0.1em" }}>SCAN TO VERIFY</div>
+        </div>
+        <div style={{ width: 1, height: 160, background: "#e2e8f4", flexShrink: 0 }} />
+        <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 32px" }}>
+          {[
+            ["PASSENGER", result.passenger.title + " " + result.passenger.name],
+            ["PNR", result.pnr],
+            ["SEAT", seg.seat],
+            ["CLASS", seg.class],
+            ["FROM", seg.from.code + " — " + seg.from.city],
+            ["TO", seg.to.code + " — " + seg.to.city],
+            ["DEPARTURE", seg.dep_time + " · " + seg.departs],
+            ["ARRIVAL", seg.arr_time + " · " + seg.arrives],
+          ].map(([l, v]) => (
+            <div key={l}>
+              <div style={{ fontSize: 9, color: "#94a3b8", letterSpacing: "0.12em", marginBottom: 2 }}>{l}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{v}</div>
             </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px dashed #e2e8f4", textAlign: "center" }}>
+        <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: "0.25em" }}>{result.ticket_number}</div>
+        <div style={{ fontSize: 10, color: "#cbd5e1", marginTop: 4 }}>American Airlines · AAdvantage® · americanairlines.com</div>
+      </div>
+      <div style={{ marginTop: 16, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+        <button onClick={async () => {
+          setBpLoading(true);
+          try { await downloadBoardingPassSingle(result, si); }
+          catch(e) { console.error(e); }
+          finally { setBpLoading(false); }
+        }} disabled={bpLoading} style={{ padding: "10px 22px", background: bpLoading ? "#94a3b8" : "linear-gradient(135deg,#CC0000,#a80000)", color: "white", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: bpLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 7, boxShadow: bpLoading ? "none" : "0 4px 14px rgba(204,0,0,0.3)" }}>
+          {bpLoading ? "⏳ Generating..." : "🎫 Download Boarding Pass " + (si + 1)}
+        </button>
+      </div>
+    </div>
+  </div>
+))}
 
           </div>
         )}
