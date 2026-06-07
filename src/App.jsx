@@ -1119,7 +1119,7 @@ function WeatherCards() {
 // =========================================================
 // COUNTDOWN TIMER
 // =========================================================
-function CountdownTimer({ departDate, checkinOpen, flightLabel }) {
+function CountdownTimer({ departDate, checkinOpen, flightLabel, pnr  }) {
   const [now, setNow] = useState(new Date());
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
 
@@ -1183,7 +1183,7 @@ function CountdownTimer({ departDate, checkinOpen, flightLabel }) {
                 <div style={{ fontSize: 16, fontWeight: 700, color: "#4ade80" }}>Open Now ✓</div>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Check in at americanairlines.com</div>
               </div>
-              <div style={{ padding: "7px 18px", background: "#4ade80", borderRadius: 8, color: "#0f172a", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>CHECK IN NOW →</div>
+             <div onClick={() => window.location.href = "/checkin?pnr=" + (pnr || "")} style={{ padding: "7px 18px", background: "#4ade80", borderRadius: 8, color: "#0f172a", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>CHECK IN NOW →</div>
             </div>
           ) : (
             <>
@@ -2326,6 +2326,7 @@ const qrData = result ? [
               departDate={DEPART_DATE}
               checkinOpen={CHECKIN_OPEN}
               flightLabel={result.segments?.[0] ? result.segments[0].flight + " · " + result.segments[0].from.code + " → " + result.segments[result.segments.length-1].to.code : ""}
+              pnr={result.pnr}
             />
 
             {/* PNR Header */}
