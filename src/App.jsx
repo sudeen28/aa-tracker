@@ -579,6 +579,12 @@ function MealSelector({ options, segments }) {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (segments?.length) {
+      setSelected(Object.fromEntries(segments.map(s => [s.flight, "standard"])));
+    }
+  }, [segments]);
+
   const handleSave = () => {
     setSaving(true);
     setTimeout(() => { setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000); }, 1200);
