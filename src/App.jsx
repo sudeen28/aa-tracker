@@ -559,31 +559,18 @@ const MEAL_OPTIONS = [
   { id: "child", icon: "🧒", label: "Child Meal", desc: "Kid-friendly portions — nuggets, pasta, fruit", tag: "CHML" },
 ];
 
-  function MealSelector({ options, segments }) {
-  console.log("MealSelector segments:", segments);
-  const flights = segments?.length
-    ? segments.map(s => s.flight)
-    
-    : ["AA 0081", "AA 0100"];
+ function MealSelector({ options, segments }) {
+  const flights = segments?.length ? segments.map(s => s.flight) : ["AA 0081", "AA 0100"];
+  const routes = segments?.length ? segments.map(s => s.from.code + " → " + s.to.code) : ["LOS → LHR", "LHR → JFK"];
+  const dates = segments?.length ? segments.map(s => s.departs + " · " + s.dep_time) : ["Jun 14, 2026 · 23:45", "Jun 15, 2026 · 10:10"];
 
-  const routes = segments?.length
-    ? segments.map(s => s.from.code + " → " + s.to.code)
-    : ["LOS → LHR", "LHR → JFK"];
-
-  const dates = segments?.length
-    ? segments.map(s => s.departs + " · " + s.dep_time)
-    : ["Jun 14, 2026 · 23:45", "Jun 15, 2026 · 10:10"];
-  
-    
-  const [selected, setSelected] = useState(
-    Object.fromEntries(flights.map(f => [f, "standard"]))
-  );
+  const [selected, setSelected] = useState({});
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (segments?.length) {
-      setSelected(Object.fromEntries(segments.map(s => [s.flight, "standard"])));
+    if (flights.length) {
+      setSelected(Object.fromEntries(flights.map(f => [f, "standard"])));
     }
   }, [segments]);
 
