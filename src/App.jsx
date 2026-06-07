@@ -559,8 +559,23 @@ const MEAL_OPTIONS = [
   { id: "child", icon: "🧒", label: "Child Meal", desc: "Kid-friendly portions — nuggets, pasta, fruit", tag: "CHML" },
 ];
 
-function MealSelector({ options }) {
-  const [selected, setSelected] = useState({ "AA 0081": "standard", "AA 0100": "standard" });
+function MealSelector({ options, segments }) {
+  const flights = segments?.length
+    ? segments.map(s => s.flight)
+    
+    : ["AA 0081", "AA 0100"];
+
+  const routes = segments?.length
+    ? segments.map(s => s.from.code + " → " + s.to.code)
+    : ["LOS → LHR", "LHR → JFK"];
+
+  const dates = segments?.length
+    ? segments.map(s => s.departs + " · " + s.dep_time)
+    : ["Jun 14, 2026 · 23:45", "Jun 15, 2026 · 10:10"];
+
+  const [selected, setSelected] = useState(
+    Object.fromEntries(flights.map(f => [f, "standard"]))
+  );
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -586,7 +601,7 @@ function MealSelector({ options }) {
         </div>
 
         <div style={{ padding: "22px 28px" }}>
-          {["AA 0081", "AA 0100"].map((flight, fi) => {
+          {flights.map((flight, fi) => {
             const routes = ["LOS → LHR", "LHR → JFK"];
             const dates = ["Jun 14, 2026 · 23:45", "Jun 15, 2026 · 10:10"];
             return (
@@ -2391,7 +2406,7 @@ const qrData = result ? [
             {result.baggage_stages?.length > 0 && <BaggageTracker stages={result.baggage_stages} />}
 
             {/* ✅ MEAL SELECTOR */}
-            <MealSelector options={result.meal_options} />
+            <MealSelector options={result.meal_options} segments={result.segments} />
 
             {/* ✅ SEAT MAP */}
             <SeatMap config={result.seat_config} />
