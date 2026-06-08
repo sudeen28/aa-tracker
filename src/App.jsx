@@ -1213,7 +1213,6 @@ for (let i = 0; i < segmentStates.length; i++) {
     break;
   }
 }
-console.log("currentState:", currentState, "segmentStates:", segmentStates, "now:", now);
 
   const days = Math.max(0, Math.floor(msLeft / 86400000));
   const hours = Math.max(0, Math.floor((msLeft % 86400000) / 3600000));
@@ -1263,18 +1262,28 @@ if (currentState === "layover") {
 }
 
 if (currentState === "in_transit") {
+  const currentSeg = segments?.find(seg => {
+    const dep = parseAirportTime(seg.departs, seg.dep_time, seg.from.code);
+    const arr = parseAirportTime(seg.arrives, seg.arr_time, seg.to.code);
+    return now >= dep && now < arr;
+  });
+  const isDelayed = currentSeg?.status === "Delayed";
+
   return (
     <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", borderRadius: 16, padding: "20px 24px", marginBottom: 20, border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#f59e0b", boxShadow: "0 0 8px #f59e0b", animation: "pulse 1.5s infinite", flexShrink: 0 }} />
-          <span style={{ fontSize: 18, fontWeight: 800, color: "#f59e0b", letterSpacing: "0.06em" }}>IN TRANSIT</span>
+          <div style={{ width: 12, height: 12, borderRadius: "50%", background: isDelayed ? "#f97316" : "#f59e0b", boxShadow: "0 0 8px " + (isDelayed ? "#f97316" : "#f59e0b"), animation: "pulse 1.5s infinite", flexShrink: 0 }} />
+          <span style={{ fontSize: 18, fontWeight: 800, color: isDelayed ? "#f97316" : "#f59e0b", letterSpacing: "0.06em" }}>
+            {isDelayed ? "DELAYED · IN TRANSIT" : "IN TRANSIT"}
+          </span>
         </div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", flex: 1 }}>
           ✈ {stateLabel} — Passenger is currently in the air.
+          {isDelayed && <span style={{ color: "#f97316", marginLeft: 6 }}>Flight is running late.</span>}
         </div>
-        <div style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 10, padding: "8px 16px", fontSize: 11, color: "#f59e0b", fontWeight: 700 }}>
-          FLIGHT AIRBORNE
+        <div style={{ background: isDelayed ? "rgba(249,115,22,0.15)" : "rgba(245,158,11,0.15)", border: "1px solid " + (isDelayed ? "rgba(249,115,22,0.3)" : "rgba(245,158,11,0.3)"), borderRadius: 10, padding: "8px 16px", fontSize: 11, color: isDelayed ? "#f97316" : "#f59e0b", fontWeight: 700 }}>
+          {isDelayed ? "DELAYED" : "FLIGHT AIRBORNE"}
         </div>
       </div>
     </div>
@@ -1286,6 +1295,18 @@ if (currentState === "in_transit") {
       <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.12em", marginBottom: 14 }}>
         ✈ DEPARTURE COUNTDOWN — {flightLabel || ""}
       </div>
+      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.12em", marginBottom: 14 }}>
+  ✈ DEPARTURE COUNTDOWN — {flightLabel || ""}
+</div>
+
+{segments?.some(s => s.status === "Delayed") && (
+  <div style={{ background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.3)", borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+    <span style={{ fontSize: 14 }}>⚠️</span>
+    <span style={{ fontSize: 12, color: "#f97316", fontWeight: 600 }}>
+      {segments.filter(s => s.status === "Delayed").map(s => s.flight).join(", ")} — Flight delayed. Check with airline for updated times.
+    </span>
+  </div>
+)}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {/* Countdown units — scrollable row on mobile */}
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
