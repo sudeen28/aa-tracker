@@ -1119,7 +1119,7 @@ function WeatherCards() {
 // =========================================================
 // COUNTDOWN TIMER
 // =========================================================
-function CountdownTimer({ departDate, checkinOpen, flightLabel, pnr  }) {
+function CountdownTimer({ departDate, checkinOpen, flightLabel, pnr ,segments  }) {
   const [now, setNow] = useState(new Date());
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
 
@@ -2395,6 +2395,7 @@ const qrData = result ? [
               checkinOpen={CHECKIN_OPEN}
               flightLabel={result.segments?.[0] ? result.segments[0].flight + " · " + result.segments[0].from.code + " → " + result.segments[result.segments.length-1].to.code : ""}
               pnr={result.pnr}
+              segments={result.segments}
             />
 
             {/* PNR Header */}
