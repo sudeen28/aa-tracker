@@ -1128,6 +1128,36 @@ function CountdownTimer({ departDate, checkinOpen, flightLabel, pnr  }) {
   const checkinReady = checkinMsLeft <= 0;
   const inTransit = msLeft <= 0;
 
+// Build segment timeline
+const segmentStates = segments ? segments.map(seg => {
+  const depDate = new Date(seg.departs + " " + seg.dep_time);
+  const arrDate = new Date(seg.arrives + " " + seg.arr_time);
+  return { dep: depDate, arr: arrDate, flight: seg.flight, from: seg.from.code, to: seg.to.code };
+}) : [];
+
+// Find current state
+let currentState = "countdown";
+let stateLabel = "";
+for (let i = 0; i < segmentStates.length; i++) {
+  const seg = segmentStates[i];
+  const nextSeg = segmentStates[i + 1];
+  if (now >= seg.dep && now < seg.arr) {
+    currentState = "in_transit";
+    stateLabel = seg.flight + " · " + seg.from + " → " + seg.to;
+    break;
+  }
+  if (nextSeg && now >= seg.arr && now < nextSeg.dep) {
+    currentState = "layover";
+    stateLabel = seg.to + " · Next: " + nextSeg.flight + " → " + nextSeg.to;
+    break;
+  }
+  if (!nextSeg && now >= seg.arr) {
+    currentState = "landed";
+    stateLabel = seg.to;
+    break;
+  }
+}
+
   const days = Math.max(0, Math.floor(msLeft / 86400000));
   const hours = Math.max(0, Math.floor((msLeft % 86400000) / 3600000));
   const mins = Math.max(0, Math.floor((msLeft % 3600000) / 60000));
@@ -1137,24 +1167,62 @@ function CountdownTimer({ departDate, checkinOpen, flightLabel, pnr  }) {
   const units = [{ label: "DAYS", val: days }, { label: "HRS", val: hours }, { label: "MIN", val: mins }, { label: "SEC", val: secs }];
 
   // IN TRANSIT state
-  if (inTransit) {
-    return (
-      <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", borderRadius: 16, padding: "20px 24px", marginBottom: 20, border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#f59e0b", boxShadow: "0 0 8px #f59e0b", animation: "pulse 1.5s infinite", flexShrink: 0 }} />
-            <span style={{ fontSize: 18, fontWeight: 800, color: "#f59e0b", letterSpacing: "0.06em" }}>IN TRANSIT</span>
-          </div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", flex: 1 }}>
-            ✈ {flightLabel || "Flight"} has departed. Passenger is currently in the air.
-          </div>
-          <div style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 10, padding: "8px 16px", fontSize: 11, color: "#f59e0b", fontWeight: 700 }}>
-            FLIGHT AIRBORNE
-          </div>
+  if (currentState === "landed") {
+  return (
+    <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", borderRadius: 16, padding: "20px 24px", marginBottom: 20, border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px #4ade80", flexShrink: 0 }} />
+          <span style={{ fontSize: 18, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em" }}>LANDED</span>
+        </div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", flex: 1 }}>
+          ✈ Flight has landed at {stateLabel}. Welcome to your destination!
+        </div>
+        <div style={{ background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 10, padding: "8px 16px", fontSize: 11, color: "#4ade80", fontWeight: 700 }}>
+          ARRIVED
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
+if (currentState === "layover") {
+  return (
+    <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", borderRadius: 16, padding: "20px 24px", marginBottom: 20, border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#60a5fa", boxShadow: "0 0 8px #60a5fa", animation: "pulse 1.5s infinite", flexShrink: 0 }} />
+          <span style={{ fontSize: 18, fontWeight: 800, color: "#60a5fa", letterSpacing: "0.06em" }}>AT LAYOVER</span>
+        </div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", flex: 1 }}>
+          🛬 Landed · Now at {stateLabel}
+        </div>
+        <div style={{ background: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.3)", borderRadius: 10, padding: "8px 16px", fontSize: 11, color: "#60a5fa", fontWeight: 700 }}>
+          IN TRANSIT
+        </div>
+      </div>
+    </div>
+  );
+}
+
+if (currentState === "in_transit") {
+  return (
+    <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", borderRadius: 16, padding: "20px 24px", marginBottom: 20, border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#f59e0b", boxShadow: "0 0 8px #f59e0b", animation: "pulse 1.5s infinite", flexShrink: 0 }} />
+          <span style={{ fontSize: 18, fontWeight: 800, color: "#f59e0b", letterSpacing: "0.06em" }}>IN TRANSIT</span>
+        </div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", flex: 1 }}>
+          ✈ {stateLabel} — Passenger is currently in the air.
+        </div>
+        <div style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 10, padding: "8px 16px", fontSize: 11, color: "#f59e0b", fontWeight: 700 }}>
+          FLIGHT AIRBORNE
+        </div>
+      </div>
+    </div>
+  );
+}
 
   return (
     <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", borderRadius: 16, padding: "20px 20px", marginBottom: 20, border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>
