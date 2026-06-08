@@ -1,6 +1,62 @@
 import { useState, useEffect, useRef } from "react";
 import CheckIn from "./CheckIn.jsx";
 
+const AIRPORT_TIMEZONES = {
+  // North America
+  HOU: "America/Chicago", IAH: "America/Chicago", DFW: "America/Chicago",
+  JFK: "America/New_York", LGA: "America/New_York", EWR: "America/New_York",
+  LAX: "America/Los_Angeles", SFO: "America/Los_Angeles",
+  ORD: "America/Chicago", MDW: "America/Chicago",
+  MIA: "America/New_York", ATL: "America/New_York",
+  DEN: "America/Denver", PHX: "America/Phoenix",
+  SEA: "America/Los_Angeles", LAS: "America/Los_Angeles",
+  BOS: "America/New_York", DCA: "America/New_York",
+  // Europe
+  LHR: "Europe/London", LGW: "Europe/London", STN: "Europe/London",
+  CDG: "Europe/Paris", ORY: "Europe/Paris",
+  FRA: "Europe/Berlin", MUC: "Europe/Berlin", TXL: "Europe/Berlin",
+  AMS: "Europe/Amsterdam", BRU: "Europe/Brussels",
+  MAD: "Europe/Madrid", BCN: "Europe/Madrid",
+  FCO: "Europe/Rome", MXP: "Europe/Rome",
+  ZRH: "Europe/Zurich", VIE: "Europe/Vienna",
+  // Africa
+  LOS: "Africa/Lagos", ABV: "Africa/Lagos",
+  NBO: "Africa/Nairobi", ACC: "Africa/Accra",
+  JNB: "Africa/Johannesburg", CPT: "Africa/Johannesburg",
+  CAI: "Africa/Cairo",
+  // Middle East
+  DXB: "Asia/Dubai", AUH: "Asia/Dubai",
+  DOH: "Asia/Qatar", KWI: "Asia/Kuwait",
+  // Asia
+  SIN: "Asia/Singapore", KUL: "Asia/Kuala_Lumpur",
+  BKK: "Asia/Bangkok", HKG: "Asia/Hong_Kong",
+  NRT: "Asia/Tokyo", HND: "Asia/Tokyo",
+  ICN: "Asia/Seoul", PEK: "Asia/Shanghai",
+  // Australia
+  SYD: "Australia/Sydney", MEL: "Australia/Melbourne",
+};
+
+function parseAirportTime(dateStr, timeStr, airportCode) {
+  const tz = AIRPORT_TIMEZONES[airportCode] || "UTC";
+  const combined = dateStr + " " + timeStr;
+  // Use Intl to get the UTC offset for that timezone on that date
+  const tempDate = new Date(combined);
+  if (isNaN(tempDate)) return tempDate;
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: false,
+  });
+  // Parse the date string in the target timezone
+  const parts = combined.match(/(\w+ \d+, \d+)\s+(\d+:\d+\s*[AP]M)/i);
+  if (!parts) return tempDate;
+  // Create date assuming it's in the airport timezone
+  const utcDate = new Date(new Date(combined).toLocaleString("en-US", { timeZone: tz }));
+  const diff = new Date(combined) - utcDate;
+  return new Date(new Date(combined).getTime() + diff);
+}
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const DEPART_DATE = new Date(Date.now() + 23 * 24 * 60 * 60 * 1000);
@@ -1130,8 +1186,8 @@ function CountdownTimer({ departDate, checkinOpen, flightLabel, pnr ,segments  }
 
 // Build segment timeline
 const segmentStates = segments ? segments.map(seg => {
-  const depDate = new Date(seg.departs + " " + seg.dep_time);
-  const arrDate = new Date(seg.arrives + " " + seg.arr_time);
+  const depDate = parseAirportTime(seg.departs, seg.dep_time, seg.from.code);
+  const arrDate = parseAirportTime(seg.arrives, seg.arr_time, seg.to.code);
   return { dep: depDate, arr: arrDate, flight: seg.flight, from: seg.from.code, to: seg.to.code };
 }) : [];
 
@@ -2273,10 +2329,13 @@ const qrData = result ? [
       if (firstSeg) {
         const depStr = firstSeg.departs + " " + firstSeg.dep_time;
         const parsed = new Date(depStr);
-        if (!isNaN(parsed)) {
-          DEPART_DATE.setTime(parsed.getTime());
-          CHECKIN_OPEN.setTime(parsed.getTime() - 24 * 60 * 60 * 1000);
-        }
+        if (firstSeg) {
+  const parsed = parseAirportTime(firstSeg.departs, firstSeg.dep_time, firstSeg.from.code);
+  if (!isNaN(parsed)) {
+    DEPART_DATE.setTime(parsed.getTime());
+    CHECKIN_OPEN.setTime(parsed.getTime() - 24 * 60 * 60 * 1000);
+  }
+}
       }
       setResult(normalizeBooking(data));
     } catch (err) {
