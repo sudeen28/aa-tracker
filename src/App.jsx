@@ -1157,6 +1157,7 @@ for (let i = 0; i < segmentStates.length; i++) {
     break;
   }
 }
+console.log("currentState:", currentState, "segmentStates:", segmentStates, "now:", now);
 
   const days = Math.max(0, Math.floor(msLeft / 86400000));
   const hours = Math.max(0, Math.floor((msLeft % 86400000) / 3600000));
