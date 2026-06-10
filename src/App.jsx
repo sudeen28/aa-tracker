@@ -1225,20 +1225,24 @@ for (let i = 0; i < segmentStates.length; i++) {
   // IN TRANSIT state
   if (currentState === "landed") {
   return (
+    if (currentState === "landed") {
+  return (
     <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", borderRadius: 16, padding: "20px 24px", marginBottom: 20, border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px #4ade80", flexShrink: 0 }} />
-          <span style={{ fontSize: 18, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em" }}>LANDED</span>
+          <span style={{ fontSize: 18, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em" }}>TRIP COMPLETED</span>
         </div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", flex: 1 }}>
-          ✈ Flight has landed at {stateLabel}. Welcome to your destination!
+          ✈ Your journey to {stateLabel} is complete. We hope you had a pleasant flight.
         </div>
         <div style={{ background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 10, padding: "8px 16px", fontSize: 11, color: "#4ade80", fontWeight: 700 }}>
-          ARRIVED
+          FLIGHT COMPLETED
         </div>
       </div>
     </div>
+  );
+}
   );
 }
 
@@ -1457,7 +1461,12 @@ function RouteMap({ segments }) {
 function FlightSegment({ seg, index }) {
   return (
     <div style={{ background: "linear-gradient(135deg,#fff,#f8faff)", border: "1px solid #e2e8f4", borderRadius: 16, padding: "28px 32px", marginBottom: 16, position: "relative" }}>
-      <div style={{ position: "absolute", top: 16, right: 20, background: seg.status === "On Time" ? "#dcfce7" : "#fef3c7", color: seg.status === "On Time" ? "#16a34a" : "#d97706", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20 }}>{seg.status.toUpperCase()}</div>
+      <div style={{ 
+  position: "absolute", top: 16, right: 20, 
+  background: seg.status === "On Time" ? "#dcfce7" : seg.status === "Delayed" ? "#fff7ed" : seg.status === "Cancelled" ? "#fef2f2" : seg.status === "Landed" ? "#eff6ff" : seg.status === "Boarding" ? "#f0fdf4" : "#fef3c7", 
+  color: seg.status === "On Time" ? "#16a34a" : seg.status === "Delayed" ? "#ea580c" : seg.status === "Cancelled" ? "#dc2626" : seg.status === "Landed" ? "#0047AB" : seg.status === "Boarding" ? "#15803d" : "#d97706", 
+  fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20 
+}}>{seg.status.toUpperCase()}</div>
       <div style={{ display: "flex", gap: 8, marginBottom: 20, alignItems: "center" }}>
         <span style={{ fontSize: 13, color: "#0047AB", fontWeight: 600 }}>FLIGHT {seg.flight}</span>
         <span style={{ color: "#cbd5e1" }}>·</span>
