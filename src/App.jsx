@@ -1223,9 +1223,7 @@ for (let i = 0; i < segmentStates.length; i++) {
   const units = [{ label: "DAYS", val: days }, { label: "HRS", val: hours }, { label: "MIN", val: mins }, { label: "SEC", val: secs }];
 
   // IN TRANSIT state
-  if (currentState === "landed") {
-  return (
-    if (currentState === "landed") {
+if (currentState === "landed") {
   return (
     <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", borderRadius: 16, padding: "20px 24px", marginBottom: 20, border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
@@ -1241,8 +1239,6 @@ for (let i = 0; i < segmentStates.length; i++) {
         </div>
       </div>
     </div>
-  );
-}
   );
 }
 
