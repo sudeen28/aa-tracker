@@ -64,11 +64,12 @@ const getRouteSummary = (segments = []) => {
   if (!segments.length) return "";
   return segments.map(s => s.from.code).join(" → ") + " → " + segments[segments.length - 1].to.code;
 };
-const getSegmentConnectionLabel = (segments = [], index = 0, layover = null, tripType = "ONE_WAY") => {
+const getSegmentConnectionLabel = (segments = [], index = 0, layovers = [], tripType = "ONE_WAY") => {
   if (index >= segments.length - 1) return "NONSTOP";
   const next = segments[index + 1];
   if (tripType === "ROUND_TRIP" && next.to.code === segments[0].from.code) return "RETURN FLIGHT: " + next.flight;
-  const connection = layover?.code === segments[index].to.code ? layover.connection_time : "";
+  const layover = (layovers || []).find(l => l.code === segments[index].to.code);
+  const connection = layover ? layover.connection_time : "";
   return "LAYOVER: " + segments[index].to.code + (connection ? " · " + connection : " · Next " + next.flight);
 };
 
@@ -1468,8 +1469,7 @@ function RouteMap({ segments }) {
 // =========================================================
 // FLIGHT SEGMENT
 // =========================================================
-function FlightSegment({ seg, index, segments, layover, tripType }) {
-  return (
+function FlightSegment({ seg, index, segments, layovers, tripType }) {  return (
     <div style={{ background: "linear-gradient(135deg,#fff,#f8faff)", border: "1px solid #e2e8f4", borderRadius: 16, padding: "28px 32px", marginBottom: 16, position: "relative" }}>
       <div style={{ position: "absolute", top: 16, right: 20,
   background: seg.liveStatus?.status === "landed" ? "#eff6ff" : seg.liveStatus?.status === "active" ? "#f0fdf4" : seg.liveStatus?.status === "cancelled" ? "#fef2f2" : seg.status === "On Time" ? "#dcfce7" : seg.status === "Delayed" ? "#fff7ed" : "#fef3c7",
@@ -1509,7 +1509,7 @@ function FlightSegment({ seg, index, segments, layover, tripType }) {
             </svg>
             <div style={{ height: 1, flex: 1, background: "#cbd5e1" }} />
           </div>
-          <div style={{ fontSize: 10, color: "#0047AB", marginTop: 6, fontWeight: 600 }}>{getSegmentConnectionLabel(segments, index, layover, tripType)}</div>
+          <div style={{ fontSize: 10, color: "#0047AB", marginTop: 6, fontWeight: 600 }}>{getSegmentConnectionLabel(segments, index, layovers, tripType)}</div>
         </div>
         <div style={{ flex: 1, textAlign: "right" }}>
           <div style={{ fontSize: 42, fontWeight: 700, color: "#0f172a", lineHeight: 1 }}>{seg.to.code}</div>
@@ -1956,7 +1956,7 @@ async function downloadPDF(booking) {
     doc.setTextColor(15,23,42); doc.setFontSize(24); doc.setFont("helvetica","bold"); doc.text(seg.from.code,54,y+22); doc.text(seg.to.code,W-100,y+22);
     doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(100,116,139); doc.text(seg.from.city,54,y+34); doc.text(seg.to.city,W-100,y+34);
     doc.setDrawColor(200,210,230); doc.line(W/2-35,y+14,W/2+35,y+14); doc.setTextColor(0,71,171); doc.setFontSize(8); doc.setFont("helvetica","bold");
-    doc.text(seg.duration,W/2-12,y+10); doc.text(getSegmentConnectionLabel(booking.segments, i, booking.layover, booking.trip_type),W/2-36,y+22);
+    doc.text(seg.duration,W/2-12,y+10); doc.text(getSegmentConnectionLabel(booking.segments, i, booking.layovers, booking.trip_type),W/2-36,y+22);
     doc.setTextColor(15,23,42); doc.setFontSize(14); doc.setFont("helvetica","bold"); doc.text(seg.dep_time,54,y+52); doc.text(seg.arr_time,W-100,y+52);
     doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(100,116,139); doc.text(seg.departs,54,y+64); doc.text(seg.arrives,W-100,y+64); y+=72;
     doc.setDrawColor(226,232,244); doc.setLineDash([2,3]); doc.line(54,y,W-54,y); doc.setLineDash([]); y+=8;
@@ -2559,7 +2559,7 @@ const qrData = result ? [
             {/* Segments */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 11, letterSpacing: "0.15em", color: "#94a3b8", marginBottom: 12, paddingLeft: 4 }}>FLIGHT ITINERARY</div>
-              {result.segments.map((seg, i) => <FlightSegment key={i} seg={seg} index={i} segments={result.segments} layover={result.layover} tripType={result.trip_type} />)}
+              {result.segments.map((seg, i) => <FlightSegment key={i} seg={seg} index={i} segments={result.segments} layovers={result.layovers} tripType={result.trip_type} />)}
             </div>
 
             {/* ✅ VISA REQUIREMENTS — only for international flights */}
@@ -2577,8 +2577,8 @@ const qrData = result ? [
             {/* ✅ SEAT MAP */}
             <SeatMap config={result.seat_config} />
 
-            {/* ✅ LAYOVER CARD — only when multiple segments */}
-            {result.segments && result.segments.length > 1 && result.layover && <LayoverCard layover={result.layover} />}
+            {/* ✅ LAYOVER CARD(S) — only when multiple segments */}
+            {result.segments && result.segments.length > 1 && result.layovers?.map((l, i) => <LayoverCard key={i} layover={l} />)}
 
             {/* Baggage */}
             <div style={{ background: dm.card, borderRadius: 16, padding: "24px 32px", marginBottom: 20, border: "1px solid " + dm.cardBorder, transition: "background 0.3s" }}>
