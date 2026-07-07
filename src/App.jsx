@@ -59,6 +59,19 @@ function parseAirportTime(dateStr, timeStr, airportCode) {
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+const getTripTypeLabel = (tripType) => tripType === "ROUND_TRIP" ? "Round trip" : "One-way trip";
+const getRouteSummary = (segments = []) => {
+  if (!segments.length) return "";
+  return segments.map(s => s.from.code).join(" → ") + " → " + segments[segments.length - 1].to.code;
+};
+const getSegmentConnectionLabel = (segments = [], index = 0, layover = null, tripType = "ONE_WAY") => {
+  if (index >= segments.length - 1) return "NONSTOP";
+  const next = segments[index + 1];
+  if (tripType === "ROUND_TRIP" && next.to.code === segments[0].from.code) return "RETURN FLIGHT: " + next.flight;
+  const connection = layover?.code === segments[index].to.code ? layover.connection_time : "";
+  return "LAYOVER: " + segments[index].to.code + (connection ? " · " + connection : " · Next " + next.flight);
+};
+
 const DEPART_DATE = new Date(Date.now() + 23 * 24 * 60 * 60 * 1000);
 DEPART_DATE.setHours(23, 45, 0, 0);
 const CHECKIN_OPEN = new Date(DEPART_DATE.getTime() - 24 * 60 * 60 * 1000);
@@ -67,6 +80,7 @@ const BOOKING = {
   pnr: "AA7X4K2",
   passenger: { name: "James O. Mitchell", title: "MR", frequent_flyer: "AA-9284710", passport: "***4821" },
   status: "CONFIRMED",
+  trip_type: "ONE_WAY",
   booking_date: "May 18, 2026",
   ticket_number: "001-2847192034",
   segments: [
@@ -1454,7 +1468,7 @@ function RouteMap({ segments }) {
 // =========================================================
 // FLIGHT SEGMENT
 // =========================================================
-function FlightSegment({ seg, index }) {
+function FlightSegment({ seg, index, segments, layover, tripType }) {
   return (
     <div style={{ background: "linear-gradient(135deg,#fff,#f8faff)", border: "1px solid #e2e8f4", borderRadius: 16, padding: "28px 32px", marginBottom: 16, position: "relative" }}>
       <div style={{ position: "absolute", top: 16, right: 20,
@@ -1495,7 +1509,7 @@ function FlightSegment({ seg, index }) {
             </svg>
             <div style={{ height: 1, flex: 1, background: "#cbd5e1" }} />
           </div>
-          <div style={{ fontSize: 10, color: "#0047AB", marginTop: 6, fontWeight: 600 }}>{index === 0 ? "LAYOVER: LHR" : "NONSTOP"}</div>
+          <div style={{ fontSize: 10, color: "#0047AB", marginTop: 6, fontWeight: 600 }}>{getSegmentConnectionLabel(segments, index, layover, tripType)}</div>
         </div>
         <div style={{ flex: 1, textAlign: "right" }}>
           <div style={{ fontSize: 42, fontWeight: 700, color: "#0f172a", lineHeight: 1 }}>{seg.to.code}</div>
@@ -1553,6 +1567,7 @@ async function downloadBoardingPass(booking) {
     doc.text("PASS", 14, 172);
     doc.setFontSize(7); doc.setFont("helvetica", "normal");
     doc.setTextColor(180, 180, 180);
+    doc.text(getTripTypeLabel(booking.trip_type).toUpperCase(), 14, 184);
     doc.text("ECONOMY", 14, 196);
     doc.text(seg.seat, 14, 208);
 
@@ -1621,6 +1636,7 @@ async function downloadBoardingPass(booking) {
     doc.setFontSize(7); doc.setFont("helvetica", "normal");
     doc.setTextColor(71, 85, 105);
     doc.text(booking.ticket_number, mx, 225);
+    doc.text(getTripTypeLabel(booking.trip_type).toUpperCase(), mx + 110, 225);
 
     // Dashed tear line before barcode
     doc.setDrawColor(71, 85, 105); doc.setLineDash([3, 3]); doc.setLineWidth(0.5);
@@ -1659,7 +1675,7 @@ async function downloadBoardingPass(booking) {
     doc.setFontSize(6); doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 116, 139);
     doc.text(booking.pnr, W - 118, 204);
-    doc.text("AA · INTL", W - 118, 216);
+    doc.text("AA - " + getTripTypeLabel(booking.trip_type).toUpperCase(), W - 118, 216);
     doc.text("ECONOMY", W - 118, 226);
 
     doc.save("AA_BoardingPass_" + booking.pnr + "_" + seg.from.code + seg.to.code + ".pdf");
@@ -1712,6 +1728,9 @@ async function downloadETicket(booking) {
   doc.text(booking.pnr, W - 40, 57, { align: "right" });
   doc.setTextColor(15, 23, 42);
   doc.text(booking.ticket_number, W - 40, 70, { align: "right" });
+  doc.setFontSize(7); doc.setFont("helvetica", "bold");
+  doc.setTextColor(0, 71, 171);
+  doc.text(getTripTypeLabel(booking.trip_type).toUpperCase(), W - 40, 82, { align: "right" });
 
   y = 100;
 
@@ -1920,6 +1939,7 @@ async function downloadPDF(booking) {
   y=95; doc.setFillColor(0,35,100); doc.roundedRect(40,y,W-80,54,5,5,"F");
   doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text("BOOKING REFERENCE (PNR)",56,y+15);
   doc.setFontSize(24); doc.setFont("helvetica","bold"); doc.text(booking.pnr,56,y+40);
+  doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.text(getTripTypeLabel(booking.trip_type).toUpperCase(),190,y+39);
   doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text("STATUS",W-160,y+15);
   doc.setFontSize(14); doc.setFont("helvetica","bold"); doc.setTextColor(74,222,128); doc.text(booking.status,W-160,y+36); y+=66;
   doc.setTextColor(100,116,139); doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text("Ticket: "+booking.ticket_number+"   |   Booked: "+booking.booking_date,40,y); y+=22;
@@ -1936,7 +1956,7 @@ async function downloadPDF(booking) {
     doc.setTextColor(15,23,42); doc.setFontSize(24); doc.setFont("helvetica","bold"); doc.text(seg.from.code,54,y+22); doc.text(seg.to.code,W-100,y+22);
     doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(100,116,139); doc.text(seg.from.city,54,y+34); doc.text(seg.to.city,W-100,y+34);
     doc.setDrawColor(200,210,230); doc.line(W/2-35,y+14,W/2+35,y+14); doc.setTextColor(0,71,171); doc.setFontSize(8); doc.setFont("helvetica","bold");
-    doc.text(seg.duration,W/2-12,y+10); doc.text(i===0?"via LHR":"NONSTOP",W/2-14,y+22);
+    doc.text(seg.duration,W/2-12,y+10); doc.text(getSegmentConnectionLabel(booking.segments, i, booking.layover, booking.trip_type),W/2-36,y+22);
     doc.setTextColor(15,23,42); doc.setFontSize(14); doc.setFont("helvetica","bold"); doc.text(seg.dep_time,54,y+52); doc.text(seg.arr_time,W-100,y+52);
     doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(100,116,139); doc.text(seg.departs,54,y+64); doc.text(seg.arrives,W-100,y+64); y+=72;
     doc.setDrawColor(226,232,244); doc.setLineDash([2,3]); doc.line(54,y,W-54,y); doc.setLineDash([]); y+=8;
@@ -1953,7 +1973,7 @@ async function downloadPDF(booking) {
   }); y+=55;
   doc.setFillColor(15,23,42); doc.rect(0,y,W,55,"F"); doc.setTextColor(148,163,184); doc.setFontSize(8); doc.setFont("helvetica","normal");
   doc.text("This document is your official travel itinerary. Present at check-in along with valid ID.",40,y+16);
-  doc.text("PNR: "+booking.pnr+"   |   Ticket: "+booking.ticket_number+"   |   Issued: "+booking.booking_date,40,y+29);
+  doc.text("PNR: "+booking.pnr+"   |   "+getTripTypeLabel(booking.trip_type)+"   |   Ticket: "+booking.ticket_number+"   |   Issued: "+booking.booking_date,40,y+29);
   doc.setTextColor(80,100,160); doc.text("americanairlines.com  |  AAdvantage Service: 1-800-882-8880",40,y+42);
   doc.save("AA_Itinerary_"+booking.pnr+".pdf");
 }
@@ -1985,6 +2005,7 @@ function ETicketReceipt({ booking }) {
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", letterSpacing: "0.04em" }}>E-TICKET RECEIPT</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#0047AB", marginTop: 3, letterSpacing: "0.08em" }}>{getTripTypeLabel(booking.trip_type).toUpperCase()}</div>
             <div style={{ display: "flex", gap: 20, marginTop: 8, justifyContent: "flex-end" }}>
               <div>
                 <div style={{ fontSize: 10, color: "#94a3b8" }}>Booking Reference</div>
@@ -2312,6 +2333,7 @@ const lastSeg = result?.segments?.[result.segments.length - 1];
 const qrData = result ? [
   "AMERICAN AIRLINES",
   "PNR: " + result.pnr,
+  "TRIP: " + getTripTypeLabel(result.trip_type).toUpperCase(),
   "PAX: " + (result.passenger?.title || "") + " " + (result.passenger?.name || "Passenger"),
   "FLIGHT: " + (firstSeg?.flight || "N/A"),
   "ROUTE: " + (firstSeg?.from?.code || "N/A") + "-" + (lastSeg?.to?.code || "N/A"),
@@ -2323,6 +2345,7 @@ const qrData = result ? [
 
   const normalizeBooking = (booking) => ({
   ...booking,
+  trip_type: booking.trip_type || booking.tripType || "ONE_WAY",
   passenger: booking.passenger || {
     title: "",
     name: "Passenger",
@@ -2435,6 +2458,7 @@ const qrData = result ? [
                   "",
                   "Passenger: " + result.passenger.title + " " + result.passenger.name,
                   "PNR / Booking Reference: " + result.pnr,
+                  "Trip Type: " + getTripTypeLabel(result.trip_type),
                   "Ticket Number: " + result.ticket_number,
                   "Booking Date: " + result.booking_date,
                   "Status: " + result.status,
@@ -2496,14 +2520,14 @@ const qrData = result ? [
                 <div>
                   <div style={{ fontSize: 11, letterSpacing: "0.15em", opacity: 0.7, marginBottom: 4 }}>BOOKING REFERENCE</div>
                   <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: "0.15em" }}>{result.pnr}</div>
-                  <div style={{ marginTop: 8, opacity: 0.8, fontSize: 13 }}>Booked {result.booking_date} · Ticket {result.ticket_number}</div>
+                  <div style={{ marginTop: 8, opacity: 0.8, fontSize: 13 }}>{getTripTypeLabel(result.trip_type)} · Booked {result.booking_date} · Ticket {result.ticket_number}</div>
                 </div>
                 <div>
                   <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", padding: "8px 18px", borderRadius: 30 }}>
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 6px #4ade80", animation: "pulse 2s infinite" }} />
                     <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.08em" }}>{result.status}</span>
                   </div>
-                  <div style={{ marginTop: 10, fontSize: 12, opacity: 0.5, textAlign: "right" }}>{result.segments.map(s => s.from.code).join(" → ")} → {result.segments[result.segments.length - 1].to.code}</div>
+                  <div style={{ marginTop: 10, fontSize: 12, opacity: 0.5, textAlign: "right" }}>{getRouteSummary(result.segments)}</div>
                 </div>
               </div>
             </div>
@@ -2535,7 +2559,7 @@ const qrData = result ? [
             {/* Segments */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 11, letterSpacing: "0.15em", color: "#94a3b8", marginBottom: 12, paddingLeft: 4 }}>FLIGHT ITINERARY</div>
-              {result.segments.map((seg, i) => <FlightSegment key={i} seg={seg} index={i} />)}
+              {result.segments.map((seg, i) => <FlightSegment key={i} seg={seg} index={i} segments={result.segments} layover={result.layover} tripType={result.trip_type} />)}
             </div>
 
             {/* ✅ VISA REQUIREMENTS — only for international flights */}
@@ -2578,9 +2602,9 @@ const qrData = result ? [
   <div key={si} style={{ background: dm.card, borderRadius: 16, overflow: "hidden", border: "1px solid " + dm.cardBorder, transition: "background 0.3s", marginBottom: si < result.segments.length - 1 ? 16 : 0 }}>
     <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <div>
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>BOARDING PASS {si + 1} OF {result.segments.length}</div>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>BOARDING PASS {si + 1} OF {result.segments.length} · {getTripTypeLabel(result.trip_type).toUpperCase()}</div>
         <div style={{ color: "white", fontSize: 18, fontWeight: 700, marginTop: 2 }}>{seg.from.code} → {seg.to.code}</div>
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>{seg.from.city} to {seg.to.city}</div>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>{getRouteSummary(result.segments)}</div>
       </div>
       <div style={{ textAlign: "right" }}>
         <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>FLIGHT</div>
@@ -2595,6 +2619,7 @@ const qrData = result ? [
             <QRCode value={[
   "AMERICAN AIRLINES",
   "PNR: " + result.pnr,
+  "TRIP: " + getTripTypeLabel(result.trip_type).toUpperCase(),
   "PAX: " + result.passenger.title + " " + result.passenger.name,
   "FLIGHT: " + seg.flight,
   "ROUTE: " + seg.from.code + "-" + seg.to.code,
@@ -2609,6 +2634,7 @@ const qrData = result ? [
           {[
             ["PASSENGER", result.passenger.title + " " + result.passenger.name],
             ["PNR", result.pnr],
+            ["TRIP", getTripTypeLabel(result.trip_type)],
             ["SEAT", seg.seat],
             ["CLASS", seg.class],
             ["FROM", seg.from.code + " — " + seg.from.city],

@@ -2,6 +2,8 @@ import { useState } from "react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+const getTripTypeLabel = (tripType) => tripType === "ROUND_TRIP" ? "Round trip" : "One-way trip";
+
 const STEPS = ["Verify Identity", "Review Flight", "Choose Seat", "Extras", "Boarding Pass"];
 
 const CABIN_CONFIG = {
@@ -79,7 +81,7 @@ export default function CheckIn() {
       const res = await fetch(API_URL + "/api/booking/" + pnr.trim().toUpperCase());
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Booking not found.");
-      setBooking(data);
+      setBooking({ ...data, trip_type: data.trip_type || data.tripType || "ONE_WAY" });
       if (data.passenger?.name) {
         const parts = data.passenger.name.split(" ");
         setLastName(parts[parts.length - 1]);
@@ -191,7 +193,7 @@ export default function CheckIn() {
             <div style={{ background: "linear-gradient(135deg,#0047AB,#003580)", borderRadius: 14, padding: "20px 24px", marginBottom: 16, color: "white" }}>
               <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: "0.15em", marginBottom: 4 }}>BOOKING REFERENCE</div>
               <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "0.15em" }}>{booking.pnr}</div>
-              <div style={{ marginTop: 8, opacity: 0.7, fontSize: 13 }}>{booking.passenger?.title} {booking.passenger?.name}</div>
+              <div style={{ marginTop: 8, opacity: 0.7, fontSize: 13 }}>{getTripTypeLabel(booking.trip_type)} · {booking.passenger?.title} {booking.passenger?.name}</div>
             </div>
 
             {booking.segments?.map((s, i) => (
@@ -357,9 +359,9 @@ export default function CheckIn() {
             <div style={{ background: "white", borderRadius: 16, overflow: "hidden", border: "1px solid #e2e8f4", marginBottom: 16 }}>
               <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", padding: "20px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
                 <div>
-                  <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>BOARDING PASS</div>
+                  <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, letterSpacing: "0.15em" }}>BOARDING PASS · {getTripTypeLabel(booking.trip_type).toUpperCase()}</div>
                   <div style={{ color: "white", fontSize: 20, fontWeight: 800, marginTop: 2 }}>{seg?.from?.code} → {lastSeg?.to?.code}</div>
-                  <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 3 }}>via {booking.segments?.length > 1 ? booking.segments[0].to.city : "Nonstop"}</div>
+                  <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 3 }}>{booking.trip_type === "ROUND_TRIP" ? "Round trip" : booking.segments?.length > 1 ? "via " + booking.segments[0].to.city : "Nonstop"}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }}>STATUS</div>
@@ -374,6 +376,7 @@ export default function CheckIn() {
                   {[
                     ["PASSENGER", booking.passenger?.title + " " + booking.passenger?.name],
                     ["PNR", booking.pnr],
+                    ["TRIP", getTripTypeLabel(booking.trip_type)],
                     ["SEAT", chosenSeat],
                     ["CLASS", seg?.class],
                     ["FLIGHT", seg?.flight],
