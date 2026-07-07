@@ -1471,12 +1471,13 @@ function RouteMap({ segments }) {
 // =========================================================
 function FlightSegment({ seg, index, segments, layovers, tripType }) {  return (
     <div style={{ background: "linear-gradient(135deg,#fff,#f8faff)", border: "1px solid #e2e8f4", borderRadius: 16, padding: "28px 32px", marginBottom: 16, position: "relative" }}>
-      <div style={{ position: "absolute", top: 16, right: 20,
-  background: seg.liveStatus?.status === "landed" ? "#eff6ff" : seg.liveStatus?.status === "active" ? "#f0fdf4" : seg.liveStatus?.status === "cancelled" ? "#fef2f2" : seg.status === "On Time" ? "#dcfce7" : seg.status === "Delayed" ? "#fff7ed" : "#fef3c7",
-  color: seg.liveStatus?.status === "landed" ? "#0047AB" : seg.liveStatus?.status === "active" ? "#16a34a" : seg.liveStatus?.status === "cancelled" ? "#dc2626" : seg.status === "On Time" ? "#16a34a" : seg.status === "Delayed" ? "#ea580c" : "#d97706",
+     <div style={{
+  position: "absolute", top: 16, right: 20,
+  background: seg.status === "On Time" ? "#dcfce7" : seg.status === "Delayed" ? "#fff7ed" : seg.status === "Cancelled" ? "#fef2f2" : seg.status === "Landed" ? "#eff6ff" : seg.status === "Boarding" ? "#f0fdf4" : "#fef3c7",
+  color: seg.status === "On Time" ? "#16a34a" : seg.status === "Delayed" ? "#ea580c" : seg.status === "Cancelled" ? "#dc2626" : seg.status === "Landed" ? "#0047AB" : seg.status === "Boarding" ? "#15803d" : "#d97706",
   fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20
 }}>
-  {seg.liveStatus ? seg.liveStatus.status.toUpperCase() : seg.status.toUpperCase()}
+  {seg.status.toUpperCase()}
 </div>
 {seg.liveStatus?.dep_delay > 0 && (
   <div style={{ position: "absolute", top: 16, right: 120, background: "#fff7ed", color: "#ea580c", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20 }}>
